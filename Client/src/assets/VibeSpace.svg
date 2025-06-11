@@ -1,0 +1,10 @@
+ <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  {/* <!-- Background circle for a clean, modern look --> */}
+  <circle cx="32" cy="32" r="30" fill="#111827" />
+
+  {/* <!-- Stylish 'V' shape representing VibeSpace --> */}
+  <path d="M18 20 L32 44 L46 20" stroke="#FFFFFF" stroke-width="4" fill="none" />
+
+  {/* <!-- Dot at the top for a minimalistic icon style --> */}
+  <circle cx="32" cy="15" r="2" fill="#FFFFFF" />
+</svg>

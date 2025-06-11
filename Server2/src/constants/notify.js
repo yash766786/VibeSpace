@@ -1,0 +1,9 @@
+
+const NotificationTypes = {
+    CHAT_INVITATION_REQUEST: "CHAT_INVITATION_REQUEST",
+    CHAT_INVITATION_ACCEPT: "CHAT_INVITATION_ACCEPT",
+    MESSAGE: "MESSAGE",
+    FOLLOW: "FOLLOW",
+}
+
+export default NotificationTypes

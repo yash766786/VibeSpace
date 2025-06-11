@@ -1,0 +1,22 @@
+# Ignore node_modules in all subfolders
+Client/node_modules/
+Server1/node_modules/
+Server2/node_modules/
+
+# Ignore env files in all subfolders
+Client/.env
+Server1/.env
+Server2/.env
+
+# Optional: Ignore build folders
+Client/build/
+Client/dist/
+Server1/dist/
+Server2/dist/
+
+# Optional: System files
+.DS_Store
+Thumbs.db
+
+# Optional: Log files
+*.log
