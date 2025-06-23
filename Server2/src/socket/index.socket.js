@@ -3,15 +3,12 @@ import cookieParser from "cookie-parser";
 import { socketAuthenticator } from "../middlewares/auth.middleware.js";
 import { Chat } from "../models/chat.model.js";
 import { joinUserToChats } from "./utils/socketUtils.js";
-import { registerChatEvents } from "./handlers/chatEvent.js";
 import { CHECK_ONLINE, ONLINE_USERS } from "../constants/events.js";
-// onlineUsers: userId => socketId
+import { eventHandler } from "./event.socket.js";
 const onlineUsers = new Map();
-let ioInstance = null;
 
 export const setupSocket = (io) => {
-    ioInstance = io;
-    console.log("socket running..")
+
     io.use((socket, next) => {
         cookieParser()(
             socket.request,
@@ -23,7 +20,6 @@ export const setupSocket = (io) => {
     io.on("connection", async (socket) => {
         const [socketId, userId] = [socket.id, socket.user._id];
         onlineUsers.set(userId, socketId); // ✅ Store socketId for the user
-        console.log("User connected", { socketId: socket.id, userId: userId });
 
         // ✅ Join user to their chat rooms
         const userChats = await Chat.find({ members: userId }).select("_id");
@@ -32,10 +28,9 @@ export const setupSocket = (io) => {
 
 
         // ✅ Register socket event listeners
-        registerChatEvents(io, socket);
+        eventHandler(io, socket);
 
         socket.on("disconnect", () => {
-            console.log("User disconnected...")
             onlineUsers.delete(userId);
         });
 
@@ -43,7 +38,5 @@ export const setupSocket = (io) => {
     });
 };
 
-const getSocketIO = () => ioInstance;
-
-export { onlineUsers, getSocketIO };
+export { onlineUsers };
 

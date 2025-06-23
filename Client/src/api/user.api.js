@@ -15,3 +15,6 @@ export const changeCurrentPassword = (formData) => server1Json.patch('/users/cha
 
 export const searchUsersByUsername = (username) => server1Json.get(`/users/search-user?username=${username}`);
 export const getUserProfile = (username) => server1Json.get(`/users/profile/${username}`);
+
+export const initiateForgotPasswordReset = (jsonData) => server1Json.post("/users/forgot-password-reset", jsonData)
+export const verifyCodeAndResetPassword = (jsonData) => server1Json.post("/users/reset-password", jsonData)

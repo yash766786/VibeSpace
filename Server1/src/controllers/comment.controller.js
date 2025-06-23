@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 import { Like } from "../models/like.model.js";
 import { Comment } from "../models/comment.model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -13,8 +13,9 @@ const getPostComments = asyncHandler(async (req, res) => {
     // 2. Get page and limit from the request query
     // 3. Get userId from the authenticated user
     const { postId } = req.params;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 3 } = req.query;
     const userId = req.user._id;
+    const objectUserId = new mongoose.Types.ObjectId(userId);
 
     // 3. convert page and limit to integers
     const pageNumber = parseInt(page, 10);
@@ -27,14 +28,14 @@ const getPostComments = asyncHandler(async (req, res) => {
 
     // 5. fetching the comments of the post along with likes on the comments
     // aggregation pipeline
-    const commentsWithLikes = await Comment.aggregate([
+    const [commentsWithLikes, totalComments] = await Promise.all([Comment.aggregate([
         // match the postId
-        {    $match: { post: new mongoose.Types.ObjectId(postId) }},
+        { $match: { post: new mongoose.Types.ObjectId(postId) } },
         // sort the latest comments first
-        {    $sort: { createdAt: -1 }},
+        { $sort: { createdAt: -1 } },
         // pagination: skip and limit
-        {    $skip: (pageNumber - 1) * pageSize},
-        {    $limit: pageSize},
+        { $skip: (pageNumber - 1) * pageSize },
+        { $limit: pageSize },
         // lookup the owner of the comment as ownerDetails
         {
             $lookup: {
@@ -58,7 +59,7 @@ const getPostComments = asyncHandler(async (req, res) => {
             $addFields: {
                 likeCount: { $size: "$likes" },
                 isLikedByCurrentUser: {
-                    $in: [userId, {
+                    $in: [objectUserId, {
                         $map: {
                             input: "$likes",
                             as: "like",
@@ -90,23 +91,25 @@ const getPostComments = asyncHandler(async (req, res) => {
                 _id: 1,
                 content: 1,
                 createdAt: 1,
-                owner: { 
+                owner: {
                     _id: "$owner._id",
                     username: "$owner.username",
                     fullname: "$owner.fullname",
                     avatar: "$owner.avatar",
-                 }, // Get single owner object
+                }, // Get single owner object
                 likeCount: 1,
                 isLikedByCurrentUser: 1,
-                likersDetails : "$likersDetails.username" // Get likers' usernames
+                // likersDetails : "$likersDetails.username" // Get likers' usernames
             }
         }
-    ]);
+    ]),
+    Comment.countDocuments({ post: postId })
+
+    ])
 
     // 6. count the total comments for pagination and total pages
-    const totalComments = await Comment.countDocuments({ post: postId });
     const totalPages = Math.ceil(totalComments / pageSize);
-    
+
     // 7. return the comments in the response
     return res.status(200).json(new ApiResponse(200, {
         comments: commentsWithLikes,
@@ -124,24 +127,24 @@ const addComment = asyncHandler(async (req, res) => {
     const { postId } = req.params;
     const { content } = req.body;
     const userId = req.user._id;
-    
+
     // 4. validate the postId
     if (!isValidObjectId(postId)) {
         throw new ApiError(400, "Invalid post ID");
     }
-    
+
     // 5. validate the content
     if (!content || !content.trim()) {
         throw new ApiError(400, "Comment content is required");
     }
-    
+
     // 6. create a new comment
     const comment = await Comment.create({
         content: content.trim(),
         post: postId,
         owner: userId
     });
-    
+
     // 7. return the comment
     return res
         .status(201)
@@ -155,12 +158,12 @@ const deleteComment = asyncHandler(async (req, res) => {
     // 2. Get the userId from the authenticated user
     const { commentId } = req.params;
     const userId = req.user._id;
-    
+
     // 3. validate the commentId
     if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "Invalid comment ID");
     }
-    
+
     // 4. delete the comment
     const deletedComment = await Comment.findOneAndDelete({
         _id: commentId,
@@ -171,12 +174,12 @@ const deleteComment = asyncHandler(async (req, res) => {
     if (!deletedComment) {
         throw new ApiError(404, "Comment not found");
     }
-    
+
     // 6. delete all likes on the comment
     await Like.deleteMany({
         comment: commentId,
     });
-    
+
     // 7. return success message
     return res
         .status(200)

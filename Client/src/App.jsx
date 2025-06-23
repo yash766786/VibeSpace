@@ -1,6 +1,6 @@
 // app.jsx
 import { Suspense, lazy, useEffect } from "react";
-import { Route, Routes, useNavigate } from "react-router";
+import { Route, Routes } from "react-router";
 import toast, { Toaster } from "react-hot-toast";
 import { useSelector, useDispatch } from "react-redux";
 import { setAuthChecked, setCurrentUser } from "./redux/reducer/authSlice.js";
@@ -16,56 +16,47 @@ const CreatePost = lazy(() => import("./pages/CreatePost.jsx"));
 const Setting = lazy(() => import("./pages/Setting.jsx"));
 const Chat = lazy(() => import("./pages/Chat.jsx"));
 const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
-// const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx")); // new page
+const About = lazy(() => import("./pages/About.jsx"));
+const PasswordReset = lazy(() => import("./pages/PasswordReset.jsx")); // new page
 
 // Route Guards
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
 import AuthRoute from "./routes/AuthRoute.jsx";
 import EmailVerifyRoute from "./routes/EmailVerifyRoute.jsx";
 import { getCurrentUser } from "./api/user.api.js";
+import { FullPageLoader } from "./components/skeleton/FullPageLoader.jsx";
 
 const App = () => {
   const dispatch = useDispatch();
   const { currentUser, isAuthChecked } = useSelector((state) => state.auth);
 
   const onLoading = async () => {
-    const toastId = toast.loading("Loading In...");
     try {
       const { data } = await getCurrentUser();
       if (data.success) {
         dispatch(setCurrentUser(data.data));
-      } else {
-        toast.error(data.message, { id: toastId, duration: 3000 });
-      }
+      } 
     } catch (error) {
-      toast.error(`${error?.response?.data?.message}`, {
-        id: toastId,
-        duration: 3000,
-      });
+      toast.error(error?.response?.data?.message || "Something went Wrong");
     } finally {
       dispatch(setAuthChecked(true)); // <--- mark check complete
-      toast.dismiss(toastId);
     }
   };
 
   useEffect(() => {
     onLoading();
   }, []);
-
-  if (!isAuthChecked)
-    return (
-      <div className="h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
+  
+if (!isAuthChecked) return <FullPageLoader />;
 
   return (
     <>
       <Toaster />
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<FullPageLoader />}>
         <Routes>
           {/* Landing Page as fallback/default */}
           <Route path="/landing" element={<LandingPage />} />
+          <Route path="/about" element={<About />} />
           <Route path="/*" element={<LandingPage />} />
 
           {/* Auth Pages (accessible only to unverified or not-logged-in users) */}
@@ -85,7 +76,7 @@ const App = () => {
               </AuthRoute>
             }
           />
-          {/* <Route path="/forgot-password" element={<AuthRoute><ForgotPassword /></AuthRoute>} /> */}
+          <Route path="/password-reset" element={<AuthRoute><PasswordReset /></AuthRoute>} />
 
           {/* Email Verification Page (only for logged in but unverified users) */}
           <Route
@@ -109,7 +100,10 @@ const App = () => {
             <Route path="/:username" element={<Profile />} />
             <Route path="/post" element={<CreatePost />} />
             <Route path="/setting" element={<Setting />} />
-            <Route path="/chat" element={<Chat />} />
+            <Route path="/about" element={<About />} />
+            {/* <Route path="/chat" element={<Chat />} /> */}
+            <Route path="/chat/:chatId?" element={<Chat />} />
+
           </Route>
         </Routes>
       </Suspense>

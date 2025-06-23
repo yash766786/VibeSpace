@@ -1,9 +1,16 @@
-// Step 12: Set cookies
+
 const cookieOptions = {
     httpOnly: true,
     secure: true,
     sameSite: "None", // For cross-site cookies
     maxAge: 24 * 60 * 60 * 1000, // 1 day
+};
+
+const cookieOptionsForResetPassword = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "None", // For cross-site cookies
+    maxAge: 10 * 60 * 60, // 10 min
 };
 
 const deleteCookieOptions = {
@@ -13,4 +20,4 @@ const deleteCookieOptions = {
     expires: 0,
 };
 
-export { cookieOptions, deleteCookieOptions}
+export { cookieOptions, deleteCookieOptions, cookieOptionsForResetPassword}

@@ -2,10 +2,6 @@ import mongoose, {Schema} from "mongoose";
 
 
 const likeSchema = new Schema({
-    liked: {
-        type: Boolean,
-        default: true,
-    },
     post: {
         type: Schema.Types.ObjectId,
         ref: "Post"

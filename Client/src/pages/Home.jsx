@@ -1,46 +1,34 @@
-//
-import axios from "axios";
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { conf, configWithHeaders } from "../conf/conf";
 import { postsFetched } from "../redux/reducer/postSlice";
-import toast from "react-hot-toast";
-import { Toaster } from "react-hot-toast";
-import { useRef } from "react";
-import PostCard from "../components/container/PostCard";
-import { useState } from "react";
-import Footer from "../layout/Footer";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
+import PostCard from "../components/ui/PostCard";
+import { getAllPosts } from "../api/server1.api";
+import PostSkeleton from "../components/skeleton/PostSkeleton";
+import { Helmet } from "react-helmet";
 
 const Home = () => {
   const dispatch = useDispatch();
-
-  const { currentUser } = useSelector((state) => state.auth);
   const { posts, page, hasMore, hasFetchedPosts } = useSelector(
     (state) => state.posts
   );
   const [loading, setLoading] = useState(false);
 
-  const fetchPosts = async (page = "1") => {
-    const toastId = toast.loading("Fetching Post...");
-    console.log(page);
+  const fetchPosts = async (page) => {
+    const toastId = toast.loading("Fetching Posts...");
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        `${conf.server1Url}/posts?page=${page}`,
-        configWithHeaders
-      );
-      console.log(data?.data);
+      const { data } = await getAllPosts(page);
       if (data?.success) {
         dispatch(
           postsFetched({
-            posts: data?.data?.posts,
-            totalPages: data?.data?.totalPages,
-            currentPage: data?.data?.currentPage,
+            posts: data.data.posts,
+            totalPages: data.data.totalPages,
+            currentPage: data.data.currentPage,
           })
         );
-      } else {
-        toast.error(`${data.message}`, { id: toastId });
       }
     } catch (error) {
       toast.error(`${error?.response?.data?.message}`, { id: toastId });
@@ -54,57 +42,35 @@ const Home = () => {
     if (!hasFetchedPosts) fetchPosts(page);
   }, []);
 
-  useEffect(() => {
-    const handelInfiniteScroll = async () => {
-      try {
-        if (
-          window.innerHeight + document.documentElement.scrollTop + 1 >=
-            document.documentElement.scrollHeight &&
-          hasMore
-        ) {
-          console.log("Infinite scroll triggered", { hasMore, page });
-          fetchPosts(page); // Fetch next page of posts
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    window.addEventListener("scroll", handelInfiniteScroll);
-    return () => window.removeEventListener("scroll", handelInfiniteScroll);
-  }, [hasMore, page]); // 👈 ensure latest values are used
-
-  // return (
-  //   <div className="pr-1 md:px-2 py-6 md:w-full max-w-xl mx-auto h-[calc(100vh-70px)] overflow-auto scrollbar-hide">
-  //     <Toaster />
-  //     {posts && posts.map((post) => <PostCard key={post._id} post={post} />)}
-  //     {hasMore && <button onClick={() => fetchPosts(page)}>load more</button>}
-  //     {!hasMore && (
-  //       <p className="text-center text-gray-500 my-4">No more posts</p>
-  //     )}
-  //   </div>
-  // );
-
-   return (
+  return (
     <div className="pr-1 md:px-2 py-6 md:w-full max-w-xl mx-auto h-[calc(100vh-70px)] overflow-auto scrollbar-hide relative">
-      <Toaster />
-
       <AnimatePresence>
-        {posts &&
-          posts.map((post, index) => (
-            <motion.div
-              key={post._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
-            >
-              <PostCard post={post} />
-            </motion.div>
-          ))}
+        {loading && !posts.length
+          ? [...Array(3)].map((_, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <PostSkeleton />
+              </motion.div>
+            ))
+          : posts.map((post, index) => (
+              <motion.div
+                key={post._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+              >
+                <PostCard post={post} />
+              </motion.div>
+            ))}
       </AnimatePresence>
 
-      {hasMore && (
+      {hasMore && !loading ? (
         <div className="flex justify-center my-4">
           <button
             onClick={() => fetchPosts(page)}
@@ -112,6 +78,14 @@ const Home = () => {
           >
             Load More
           </button>
+        </div>
+      ) : null}
+
+      {hasMore && loading && (
+        <div className="my-4">
+          {[...Array(1)].map((_, i) => (
+            <PostSkeleton key={i} />
+          ))}
         </div>
       )}
 
@@ -129,7 +103,3 @@ const Home = () => {
 };
 
 export default Home;
-
-// fetch post and append post
-// infinite scrollbar
-// add end of page-> re-fetch post if(totalpage>currentPage or hasmore==true)

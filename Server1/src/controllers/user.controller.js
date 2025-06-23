@@ -1,5 +1,4 @@
 // controllers/user.controller.js
-import { isValidObjectId } from "mongoose";
 import { User } from "../models/user.model.js";
 import { Post } from "../models/post.model.js";
 import { Follow } from "../models/follow.model.js";
@@ -7,7 +6,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { sendVerificationEmail } from "../helper/mailer.js";
-import { cookieOptions, deleteCookieOptions } from "../constant/constant.js";
+import { cookieOptions, cookieOptionsForResetPassword, deleteCookieOptions } from "../constant/constant.js";
 import { destroyFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { generateAccessToken, generateResetToken } from "../utils/tokenGenerator.js";
 
@@ -37,7 +36,7 @@ const registerUser = asyncHandler(async (req, res) => {
         if (existingUserByEmail.isVerified) {
             throw new ApiError(409, "User with this email already exists");
         } else {
-            await destroyFromCloudinary(existingUserByEmail.avatar.url.split("/").pop().split(".")[0]);
+            await destroyFromCloudinary(existingUserByEmail.avatar.public_id);
             await existingUserByEmail.deleteOne();
         }
     }
@@ -46,7 +45,7 @@ const registerUser = asyncHandler(async (req, res) => {
         if (existingUserByUsername.isVerified) {
             throw new ApiError(409, "User with this username already exists");
         } else {
-            await destroyFromCloudinary(existingUserByUsername.avatar.url.split("/").pop().split(".")[0]);
+            await destroyFromCloudinary(existingUserByUsername.avatar.public_id);
             await existingUserByUsername.deleteOne();
         }
     }
@@ -86,7 +85,6 @@ const registerUser = asyncHandler(async (req, res) => {
     // 8. Send verification email
     const subject = 'Your OTP Code for Email Verification'
     const emailSentStatus = await sendVerificationEmail(newUser, verifyCode, "REGISTER", subject);
-    console.log("Email sent status:", emailSentStatus);
 
     if (!emailSentStatus) {
         // Rollback: delete avatar from Cloudinary and user object from DB
@@ -199,7 +197,6 @@ const resendVerificationCode = asyncHandler(async (req, res) => {
     // 6. Send verification email
     const subject = 'Your New OTP for Email Verification'
     const emailSentStatus = await sendVerificationEmail(updatedUser, verifyCode, "REGISTER", subject);
-    console.log("Email sent status:", emailSentStatus);
 
     if (!emailSentStatus) {
         throw new ApiError(500, "Failed to send verification email. Please try again later.");
@@ -430,9 +427,8 @@ const searchUsersByUsername = asyncHandler(async (req, res) => {
 const getUserProfile = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     const { username } = req.params;
-    console.log(username)
 
-    const user = await User.findOne({username:username})
+    const user = await User.findOne({ username: username })
         .select("_id username fullname avatar bio");
 
     if (!user) {
@@ -465,194 +461,98 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
 // FORGOT PASSWORD: step 1
 const initiateForgotPasswordReset = asyncHandler(async (req, res) => {
-    try {
-        // Step 1: Get email from the request body
-        const { email } = req.body;
-        console.log("Step 1: Received email for password reset:", email);
 
-        if (!email) {
-            console.log("Step 1: Validation failed - email is required.");
-            return res
-                .status(400)
-                .json(new ApiError(400, "Email is required."));
-        }
+    // Step 1: Get email from the request body
+    const { email } = req.body;
 
-        // Step 2: Find user by email
-        const user = await User.findOne({ email });
-        console.log("Step 2: User fetched from database:", user ? user.email : "User not found");
-
-        if (!user) {
-            console.log("Step 2: No user found for the provided email.");
-            return res
-                .status(404)
-                .json(new ApiError(404, "User with this email does not exist."));
-        }
-
-        // Step 3: Generate verification code and expiry
-        const verifyCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-        const verifyCodeExpiry = Date.now() + 10 * 60 * 1000; // Expires in 10 minutes
-        console.log("Step 3: Generated verification code and expiry:", { verifyCode, verifyCodeExpiry });
-
-        user.verifyCode = verifyCode;
-        user.verifyCodeExpiry = verifyCodeExpiry;
-
-        // Step 4: Save user with verification details
-        await user.save();
-        console.log("Step 4: User with updated verification details saved to database.");
-
-        // Step 5: Send verification email
-        sendVerificationEmail(user, verifyCode, "PASSWORDRESET");
-        console.log("Step 5: Verification email sent successfully to:", user.email);
-
-        // step 6. generating token
-        const resetToken = await generateResetToken(user.email);
-        console.log("Step 6: Reset token generated", resetToken);
-
-        // Step 7: Set cookies
-        const cookieOptions = {
-            httpOnly: true,
-            secure: true,
-            sameSite: "None", // For cross-site cookies
-            maxAge: 24 * 60 * 60 * 1000, // 1 day
-        };
-        console.log("Step 7: Cookie options set", cookieOptions);
-
-        // Step 8: Send success response
-        console.log("Step 8: Sending success response.");
-        return res
-            .status(200)
-            .cookie("resetToken", resetToken, cookieOptions)
-            .json(new ApiResponse(200, email, "Password reset OTP has been sent to your email.")
-            );
-
-    } catch (error) {
-        console.log("An error occurred during the password reset process:", error);
-        return res.status(500).json(
-            new ApiError(500, "An unexpected error occurred. Please try again later.", error)
-        );
+    if (!email) {
+        throw new ApiError(400, "Email is required");
     }
+
+    // Step 2: Find user by email
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        throw new ApiError(404, "User with this email does not exist.")
+    }
+
+    // Step 3: Generate verification code and expiry
+    const verifyCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    const verifyCodeExpiry = Date.now() + 20 * 60 * 1000; // Expires in 10 minutes
+
+    user.verifyCode = verifyCode;
+    user.verifyCodeExpiry = verifyCodeExpiry;
+
+    // Step 4: Save user with verification details
+    await user.save();
+
+    // Step 5: Send verification email
+    const subject = "OTP for Forget Password"
+    sendVerificationEmail(user, verifyCode, "PASSWORDRESET", subject);
+
+    // step 6. generating token
+    const resetToken = await generateResetToken(user.email);
+
+    // Step 8: Send success response
+    return res
+        .status(200)
+        .cookie("resetToken", resetToken, cookieOptionsForResetPassword)
+        .json(new ApiResponse(200, email, "Password reset OTP has been sent to your email."));
+
+
 });
 
 // FORGOT PASSWORD: step 2
 const verifyCodeAndResetPassword = asyncHandler(async (req, res) => {
-    try {
-        // Step 1: Validate inputs
-        console.log("Step 1: Validating inputs...");
-        const { verifyCode, password } = req.body;
-        if (!verifyCode || !password) {
-            console.log("Step 1: Validation failed - Missing verifyCode or password.");
-            return res
-                .status(400)
-                .json(new ApiError(400, "Both verifyCode and password are required."));
-        }
-        console.log("Step 1: Inputs validated.", { verifyCode, password });
+    // Step 1: Validate inputs
+    const { verifyCode, password } = req.body;
+    const email = req.userEmail;
 
-        // Step 2: Get email from token
-        console.log("Step 2: Getting email from token...");
-        const email = req.userEmail;
-        if (!email) {
-            console.log("Step 2: Failed - No email found in token.");
-            return res
-                .status(401)
-                .json(new ApiError(401, "Invalid session. Please try again."));
-        }
-        console.log("Step 2: Email extracted from token:", email);
-
-        // Step 3: Find user by email
-        console.log("Step 3: Finding user by email...");
-        const user = await User.findOne({ email });
-        if (!user) {
-            console.log("Step 3: Failed - No user found for email:", email);
-            return res
-                .status(404)
-                .json(new ApiError(404, "No user found with the provided email."));
-        }
-        console.log("Step 3: User found:", user.email);
-
-        // Step 4: Match the verifyCode
-        console.log("Step 4: Verifying the code...");
-        if (user.verifyCode !== verifyCode) {
-            console.log("Step 4: Failed - Verification code does not match.");
-            return res
-                .status(400)
-                .json(new ApiError(400, "Invalid verification code."));
-        }
-
-        // Step 4.1: Check expiry
-        console.log("Step 4.1: Checking verification code expiry...");
-        if (user.verifyCodeExpiry < Date.now()) {
-            console.log("Step 4.1: Failed - Verification code has expired.");
-            return res
-                .status(400)
-                .json(new ApiError(400, "Verification code has expired. Please request a new one."));
-        }
-        console.log("Step 4: Verification code is valid.");
-
-        // Step 4.2: Clear verifyCode and expiry
-        console.log("Step 4.2: Clearing verification code and expiry...");
-        user.verifyCode = null;
-        user.verifyCodeExpiry = null;
-
-        // Step 5: Update and hash password
-        console.log("Step 5: Hashing and updating the password...");
-        user.password = password;
-        await user.save({ validateBeforeSave: false });
-        console.log("Step 5: Password updated.");
-
-        // Step 6: Save the user
-        console.log("Step 6: Saving user data...");
-        await user.save();
-        console.log("Step 6: User saved successfully.");
-
-        // Step 7: Clear cookies
-        console.log("Step 7: Clearing reset token cookie...");
-        const options = {
-            httpOnly: true,
-            secure: true,
-            sameSite: "None", // Required for cross-site cookies
-            maxAge: 0, // optional
-        };
-        console.log("Step 7: Reset token cookie cleared.");
-
-        // Step 8: Send success response
-        console.log("Step 8: Sending success response.");
-        return res
-            .status(200)
-            .clearCookie("resetToken", options)
-            .json(new ApiResponse(200, null, "Password has been successfully updated."));
-    } catch (error) {
-        console.error("Error during password reset process:", error);
-        return res
-            .status(500)
-            .json(new ApiError(500, "An unexpected error occurred. Please try again.", error));
+    if (!verifyCode || !password) {
+        throw new ApiError(400, "Both verifyCode and password are required.")
     }
+
+    // Step 2: Get email from token
+    if (!email) {
+        throw new ApiError(401, "Invalid session. Please try again.")
+    }
+
+    // Step 3: Find user by email
+    const user = await User.findOne({ email });
+    if (!user) {
+        throw new ApiError(404, "No user found with the provided email.")
+    }
+
+    // Step 4: Match the verifyCode
+    if (user.verifyCode !== verifyCode) {
+        throw new ApiError(400, "Invalid verification code.")
+    }
+
+    // Step 4.1: Check expiry
+    if (user.verifyCodeExpiry < Date.now()) {
+        throw new ApiError(400, "Verification code has expired. Please request a new one.")
+    }
+
+    // Step 4.2: Clear verifyCode and expiry
+    user.verifyCode = "000000";
+    user.verifyCodeExpiry = Date.now()
+
+    // Step 5: Update and hash password
+    user.password = password;
+    await user.save({ validateBeforeSave: false });
+
+    // Step 6: Save the user
+    await user.save();
+
+
+    // Step 7: Clear cookies
+    // Step 8: Send success response
+    return res
+        .status(200)
+        .clearCookie("resetToken", deleteCookieOptions)
+        .json(new ApiResponse(200, null, "Password has been successfully updated."));
+
 });
-
-const getEmailForResetPassword = asyncHandler(async (req, res) => {
-    try {
-        // Step 1: Get email from token
-        console.log("Step 1: Getting email from token...");
-        const email = req.userEmail;
-        if (!email) {
-            console.log("Step 1: Failed - No email found in token.");
-            return res
-                .status(401)
-                .json(new ApiError(401, "Invalid session. Please try again."));
-        }
-        console.log("Step 1: Email extracted from token:", email);
-
-        // step 2: send response
-        return res
-            .status(200)
-            .json(new ApiResponse(200, email, "")
-            );
-    } catch (error) {
-        console.log("An error occurred during the password reset process:", error);
-        return res
-            .status(500)
-            .json(new ApiError(500, "An unexpected error occurred. Please try again later.", error));
-    }
-})
 
 export {
     registerUser,
@@ -668,5 +568,4 @@ export {
     getUserProfile,
     initiateForgotPasswordReset,
     verifyCodeAndResetPassword,
-    getEmailForResetPassword
 }

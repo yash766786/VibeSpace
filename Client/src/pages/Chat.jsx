@@ -1,7 +1,7 @@
 // pages/Chat.jsx
 import axios from "axios";
 import { useEffect, useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { useSocket } from "../context/SocketContext";
 import { useSelector, useDispatch } from "react-redux";
 import { conf, configWithHeaders } from "../conf/conf.js";
@@ -9,6 +9,7 @@ import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
 import { chatsFetched } from "../redux/reducer/chatSlice.js";
 import { CHECK_ONLINE, ONLINE_USERS } from "../constant/events.js";
+import { useNavigate, useParams } from "react-router";
 
 const Chat = () => {
   const { socket } = useSocket();
@@ -42,8 +43,6 @@ const Chat = () => {
             chats: data?.data,
           })
         );
-      } else {
-        toast.error(`${data.message}`, { id: toastId });
       }
     } catch (error) {
       toast.error(`${error?.response?.data?.message}`, { id: toastId });
@@ -53,14 +52,28 @@ const Chat = () => {
   };
 
   useEffect(() => {
-    console.log(hasFetchedChats)
     if (!hasFetchedChats) fetchChats();
   }, []);
 
+  const { chatId } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (chatId && chats.length > 0) {
+      const foundChat = chats.find((chat) => chat._id === chatId);
+      setSelectedChat(foundChat || null);
+
+    }
+  }, [chatId, chats]);
+
+  
+const handleChatSelect = (chat) => {
+  setSelectedChat(chat);
+  navigate(`/chat/${chat._id}`);
+};
+
   return (
     <div className="flex h-[calc(100vh-70px)]">
-    {/* // <div className="flex"> */}
-      <Toaster />
       {/* Chat List */}
       <div
         className={`w-full md:w-1/3 border-r ${
@@ -68,7 +81,8 @@ const Chat = () => {
         }`}
       >
         <ChatList
-          setSelectedChat={setSelectedChat}
+          // setSelectedChat={setSelectedChat}
+          setSelectedChat={handleChatSelect}
           selectedChat={selectedChat}
         />
       </div>

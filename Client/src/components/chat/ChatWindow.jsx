@@ -2,11 +2,15 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { conf, configWithHeaders } from "../../conf/conf";
-import ChatHeader from "./components/ChatHeader";
-import ChatMessages from "./components/ChatMessages";
-import MessageInput from "./components/MessageInput";
+import ChatHeader from "./ui/ChatHeader";
+import ChatMessages from "./ui/ChatMessages";
+import MessageInput from "./ui/MessageInput";
 import { useSocket } from "../../context/SocketContext";
 import { useSelector } from "react-redux";
+import { useSocketEvent } from "../../hooks/useSocketEvent";
+import { NEW_MESSAGE_ALERT } from "../../constant/events";
+import { getMessages } from "../../api/server2.api";
+import toast from "react-hot-toast";
 
 const ChatWindow = ({ chat, goBack }) => {
   const { socket, isConnected } = useSocket();
@@ -24,20 +28,12 @@ const ChatWindow = ({ chat, goBack }) => {
     if (!chat?._id) return;
 
     try {
-      setLoading(true);
-      console.log("fetching....");
+      setLoading(true)
+      const { data } = await getMessages(chat._id, page)
 
-      const { data } = await axios.get(
-        `${conf.server2Url}/messages/${chat._id}?page=${page}`,
-        configWithHeaders
-      );
-
-      console.log(data);
       if (data?.success) {
         const newMessages = data.data.messages.reverse(); // Make oldest on top
-
         setMessages((prev) => [...newMessages, ...prev]);
-
         const totalPages = data.data.totalPages;
         const currentPageFromServer = data.data.currentPage;
 
@@ -46,7 +42,7 @@ const ChatWindow = ({ chat, goBack }) => {
         setCurrentPage(currentPageFromServer); // Server is the source of truth
       }
     } catch (error) {
-      console.error("Failed to fetch messages:", error);
+      toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -68,6 +64,12 @@ const ChatWindow = ({ chat, goBack }) => {
   if (loading || !hasMore) return;
   fetchMessages(currentPage + 1);
 };
+
+  useSocketEvent(NEW_MESSAGE_ALERT, ({chatId, message }) => {
+    if (chatId !== chat._id)  return;
+    if(message.sender == currentUser._id) return;
+    setMessages((prev) => [...prev, message])
+  });
 
 
   if (!chat) return null;

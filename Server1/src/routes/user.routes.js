@@ -12,7 +12,6 @@ import {
     getUserProfile,
     initiateForgotPasswordReset,
     verifyCodeAndResetPassword,
-    getEmailForResetPassword,
     resendVerificationCode,
 } from "../controllers/user.controller.js";
 import { verifyToken, VerifyResetToken } from "../middlewares/auth.middleware.js";
@@ -22,7 +21,6 @@ const router = Router()
 
 router.route("/register").post(upload.single("avatar"), registerUser)
 router.route("/login").post(loginUser)
-router.route("/forgot-password-reset").post(initiateForgotPasswordReset)
 
 // secured routes
 router.route('/verify-email').put(verifyToken, verifyEmail);
@@ -38,7 +36,7 @@ router.route("/search-user").get(verifyToken, searchUsersByUsername);
 router.route("/profile/:username").get(verifyToken, getUserProfile)
 
 // forgot password
+router.route("/forgot-password-reset").post(initiateForgotPasswordReset)
 router.route("/reset-password").post(VerifyResetToken, verifyCodeAndResetPassword)
-router.route("/reset-password-email").get(VerifyResetToken, getEmailForResetPassword)
 
 export default router

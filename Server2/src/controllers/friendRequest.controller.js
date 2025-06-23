@@ -1,4 +1,3 @@
-import { isValidObjectId } from "mongoose";
 import { NEW_NOTIFICATION_ALERT } from "../constants/events.js";
 import NotificationTypes from "../constants/notify.js";
 import { Chat } from "../models/chat.model.js";
@@ -11,8 +10,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 
 
-
-const sendFriendRequest = asyncHandler(async (req, res, next) => {
+const sendFriendRequest = asyncHandler(async (req, res) => {
     const userId = req.user._id
     const { targetUserId } = req.body;
     const message = (req.body.message || "").trim();
@@ -45,7 +43,7 @@ const sendFriendRequest = asyncHandler(async (req, res, next) => {
             receiver: targetUserId,
         }),
         User.findById(userId).select("username avatar")
-    ]) 
+    ])
 
     const newNotification = await Notification.create({
         receiver: targetUserId,
@@ -89,8 +87,8 @@ const respondFriendRequest = asyncHandler(async (req, res) => {
     await Promise.all([
         FriendRequest.findByIdAndDelete(requestId),
         Notification.deleteOne({
-            sender: request.sender,
-            receiver: request.receiver,
+            sender: request.sender.toString(),
+            receiver: request.receiver.toString(),
             type: NotificationTypes.CHAT_INVITATION_REQUEST,
             "metadata.requestId": request._id
         })
@@ -98,20 +96,25 @@ const respondFriendRequest = asyncHandler(async (req, res) => {
 
     if (accept) {
         // Create chat
-        const chat = await Chat.create({ members: [request.sender, request.receiver] });
+        const [chat, user] = await Promise.all([
+            Chat.create({ members: [request.sender, request.receiver] }),
+            User.findById(userId).select("username avatar")
+        ])
 
         // Notify sender about acceptance
         const newNotification = await Notification.create({
             sender: userId,
             receiver: request.sender,
-            type: NotificationTypes.CHAT_REQUEST_ACCEPTED,
+            type: NotificationTypes.CHAT_INVITATION_ACCEPT,
             content: "accepted your chat request",
             metadata: {
-                chatId: chat._id
+                chatId: chat._id,
+                user
             }
         });
 
         // Emit socket event to other user in the chat
+        const targetUserId = request.sender.toString()
         const socketId = onlineUsers.get(targetUserId);
         if (socketId) {
             req.app.get("io").to(socketId).emit(NEW_NOTIFICATION_ALERT, {

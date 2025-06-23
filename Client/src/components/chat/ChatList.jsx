@@ -1,7 +1,7 @@
 // src/components/chat/ChatList.jsx
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import ChatItem from "./components/ChatItem";
+import ChatItem from "./ui/ChatItem";
 import { ONLINE_USERS } from "../../constant/events";
 import { useSocketEvent } from "../../hooks/useSocketEvent";
 import { setOnlineUsers } from "../../redux/reducer/onlineSlice";
@@ -19,8 +19,7 @@ const ChatList = ({ setSelectedChat, selectedChat }) => {
 
   socket.emit("CHECK_ONLINE", currentUser?._id);
   socket.on(ONLINE_USERS, (userIds) => {
-    // console.log("📥 Received ONLINE_USERS:", userIds); 
-    dispatch(setOnlineUsers(userIds)); // userIds: [userId1, userId2, ...]
+    dispatch(setOnlineUsers(userIds)); 
   });
 
   return () => {
@@ -29,18 +28,32 @@ const ChatList = ({ setSelectedChat, selectedChat }) => {
 }, [socket]);
 
   return (
-    <div className="h-full overflow-y-auto p-4">
-      {chats.map((chat) => (
-        <ChatItem
-          key={chat._id}
-          chat={chat}
-          isSelected={selectedChat?._id === chat._id}
-          onSelect={setSelectedChat}
-          isOnline={onlineUsers.includes(chat.friend._id)}
-        />
-      ))}
-    </div>
-  );
+  <div className="h-full overflow-y-auto px-3 py-4">
+    {chats.map((chat) => (
+      <ChatItem
+        key={chat._id}
+        chat={chat}
+        isSelected={selectedChat?._id === chat._id}
+        onSelect={setSelectedChat}
+        isOnline={onlineUsers.includes(chat.friend._id)}
+      />
+    ))}
+  </div>
+);
+
+  // return (
+  //   <div className="h-full overflow-y-auto p-4">
+  //     {chats.map((chat) => (
+  //       <ChatItem
+  //         key={chat._id}
+  //         chat={chat}
+  //         isSelected={selectedChat?._id === chat._id}
+  //         onSelect={setSelectedChat}
+  //         isOnline={onlineUsers.includes(chat.friend._id)}
+  //       />
+  //     ))}
+  //   </div>
+  // );
 };
 
 export default ChatList;

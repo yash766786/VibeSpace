@@ -9,8 +9,8 @@ import { verifyToken } from "../middlewares/auth.middleware.js"
 const router = Router();
 router.use(verifyToken); // Apply verifyToken middleware to all routes in this file
 
-router.route("/toggle/u/:username").get(toggleFollowUser);
-router.get('/u/:username/followers', getFollowers);
-router.get('/u/:username/followings', getFollowings);
+router.route("/toggle/u/:targetUserId").get(toggleFollowUser);
+router.get('/followers/u/:targetUserId', getFollowers);
+router.get('/followings/u/:targetUserId', getFollowings);
 
 export default router

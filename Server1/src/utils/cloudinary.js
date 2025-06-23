@@ -11,8 +11,7 @@ cloudinary.config({
 
 const uploadOnCloudinary = async (localFilePath) =>{
     if(!localFilePath) return null;
-    console.log({process: process.env.CLOUDINARY_CLOUD_NAME, key: process.env.CLOUDINARY_API_KEY, secret: process.env.CLOUDINARY_API_SECRET});
-
+    
     try {
         // upload the file on cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
@@ -20,14 +19,11 @@ const uploadOnCloudinary = async (localFilePath) =>{
         })
 
         // file has been uploaded successfully
-        console.log("file is uploaded on cloudinary");
         fs.unlinkSync(localFilePath);
-
         return response
     } 
     catch(error){
-        // fs.unlinkSync(localFilePath);
-        console.log("Error uploading file on Cloudinary: ", error);
+        fs.unlinkSync(localFilePath);
         return null;
     }
 }
@@ -38,12 +34,9 @@ const destroyFromCloudinary = async (publicId) =>{
     try {
         // delete the file from Cloudinary
         const response = await cloudinary.uploader.destroy(publicId);
-
-        console.log("file is deleted from cloudinary ");
         return response;
     } 
     catch(error){
-        console.log("Error deleting file from Cloudinary: ", error);
         return null;
     }
 }

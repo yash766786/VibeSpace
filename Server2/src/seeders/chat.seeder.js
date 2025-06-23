@@ -1,36 +1,3 @@
-// import { faker, simpleFaker } from "@faker-js/faker";
-// import { Chat } from "../models/chat.model.js";
-// import { Message } from "../models/message.model.js";
-// import { User } from "../models/user.model.js";
-
-// const createSingleChats = async (numChats) => {
-//   try {
-//     const users = await User.find().select("_id");
-
-//     const chatsPromise = [];
-
-//     for (let i = 0; i < users.length; i++) {
-//       for (let j = i + 1; j < users.length; j++) {
-//         chatsPromise.push(
-//           Chat.create({
-//             name: faker.lorem.words(2),
-//             members: [users[i], users[j]],
-//           })
-//         );
-//         break;
-//       }
-//     }
-
-//     await Promise.all(chatsPromise);
-
-//     console.log("Chats created successfully");
-//     process.exit();
-//   } catch (error) {
-//     console.error(error);
-//     process.exit(1);
-//   }
-// };
-
 
 import { faker } from "@faker-js/faker";
 import { Chat } from "../models/chat.model.js";

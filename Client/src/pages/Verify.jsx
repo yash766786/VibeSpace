@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import toast, { Toaster } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { conf, configWithHeaders } from "../conf/conf";
 import { setCurrentUser } from "../redux/reducer/authSlice";
 
@@ -79,7 +79,6 @@ const Verify = () => {
 
   return (
     <div className="h-full flex items-center justify-center py-20 px-4">
-      <Toaster />
       <div className="card w-full max-w-md shadow-2xl bg-base-300 rounded-2xl">
         <div className="card-body">
           <h2 className="text-2xl font-bold text-primary text-center">
@@ -140,15 +139,3 @@ const Verify = () => {
 };
 
 export default Verify;
-
-
-// handleVerifyCode
-// check currentuser-> isverified==true (already verified) then redirect the user to home page
-// send request with verify code
-// show response message from toast
-// if response success->true then update the currentuser and redirect to home page
-// else if success->false then user at same page
-
-// handleResendVerifyCode
-// send request for resend otp
-// show response message from toast

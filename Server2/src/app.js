@@ -5,19 +5,19 @@ import { Server } from "socket.io";
 import { createServer } from "http"
 import cookieParser from "cookie-parser";
 import { corsOptions } from "./constants/config.js";
-import {setupSocket}  from "./socket/index.socket.js";
+import { setupSocket } from "./socket/index.socket.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js"
 
 // create server
 const app = express();
-export const server = new createServer(app);
+const server = new createServer(app);
 const io = new Server(server, {
     cors: corsOptions,
 });
 
 // set app and io
 app.set("io", io);
-setupSocket(io); 
+setupSocket(io);
 
 
 // define middlewares
@@ -42,3 +42,5 @@ app.use("/api/v3/notifications", notificationRoute);
 
 // define error handling middleware
 app.use(errorMiddleware);
+
+export { server }

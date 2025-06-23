@@ -1,199 +1,87 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useUser } from "../context/UserState.jsx";
-import { useAlert } from "../context/AlertState.jsx";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import toast from "react-hot-toast";
+import { motion } from "framer-motion";
+import { verifyCodeAndResetPassword } from "../api/user.api"; // create this API
 
-function PasswordReset() {
-  const { 
-    initiateForgetPasswordReset, 
-    verifyCodeAndResetPassword, 
-    getEmailForResetPassword 
-  } = useUser();
-  const { showAlert } = useAlert();
+const PasswordReset = () => {
+  const [otp, setotp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
+  const { state } = useLocation();
+  // const email = state?.email;
 
-  const [email, setEmail] = useState("");
-  const [otpAndPasswordDetails, setOtpAndPasswordDetails] = useState({
-    verifyCode: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [showOtpAndPasswordField, setShowOtpAndPasswordField] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    async function onLoading() {
-        // console.log("first checking if already email is sent")
-      const response = await getEmailForResetPassword();
-      if (response && response.success) {
-        setEmail(response.data.email);
-        setShowOtpAndPasswordField(true);
-        // console.log(response)
-      }
-    }
-    onLoading();
-  }, [navigate]);
-
-  const handleEmailSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    const response = await initiateForgetPasswordReset(email);
-    if (response && response.success) {
-      setEmail(response.data.email);
-      setShowOtpAndPasswordField(true);
-      showAlert(response.message, "info");
-      // console.log(response)
-    } else {
-      showAlert(response.message, "danger");
-    }
-    setIsLoading(false);
-  };
-
-  const handleOtpAndPasswordSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    if (otpAndPasswordDetails.password !== otpAndPasswordDetails.confirmPassword) {
-      showAlert("Passwords do not match!", "danger");
-      setIsLoading(false);
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
       return;
     }
 
-    const response = await verifyCodeAndResetPassword(otpAndPasswordDetails);
-    if (response && response.success) {
+    const toastId = toast.loading("Resetting password...");
+    try {
+      const res = await verifyCodeAndResetPassword({ verifyCode: otp, password: newPassword });
+      toast.success(res.data.message || "Password updated!", { id: toastId });
       navigate("/login");
-      showAlert(response.message, "success");
-    } else {
-      showAlert(response.message, "danger");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to reset password", {
+        id: toastId,
+      });
+    } finally {
+      toast.dismiss(toastId);
     }
-    setIsLoading(false);
   };
 
   return (
-    <div className="h-auto flex items-center justify-center mb-6">
-      <div className="card w-full max-w-lg shadow-xl bg-base-300 opacity-75">
-        <div className="card-body">
-          <h2 className="text-center text-2xl font-bold leading-tight text-primary">
-            {showOtpAndPasswordField ? "Reset Your Password" : "Forgot Password"}
-          </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md bg-white p-8 rounded-2xl shadow-2xl"
+      >
+        <h2 className="text-2xl font-bold text-primary mb-6 text-center">
+          Reset Your Password
+        </h2>
 
-          {/* Email Form */}
-          {!showOtpAndPasswordField && (
-            <form onSubmit={handleEmailSubmit}>
-              <div className="form-control mb-4">
-                <label htmlFor="email" className="label">
-                  <span className="label-text">Email Address</span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="input input-bordered w-full"
-                  required
-                />
-              </div>
-
-              <div className="form-control mt-4">
-                {isLoading ? (
-                  <button className="btn btn-primary w-full" disabled>
-                    <span className="loading loading-dots loading-md"></span>
-                  </button>
-                ) : (
-                  <button type="submit" className="btn btn-primary w-full">
-                    Send Verification Code
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
-
-          {/* OTP and Password Form */}
-          {showOtpAndPasswordField && (
-            <form onSubmit={handleOtpAndPasswordSubmit}>
-              <div className="form-control mb-4">
-                <label htmlFor="verifyCode" className="label">
-                  <span className="label-text">Verification Code</span>
-                </label>
-                <input
-                  type="text"
-                  id="verifyCode"
-                  name="verifyCode"
-                  value={otpAndPasswordDetails.verifyCode}
-                  onChange={(e) =>
-                    setOtpAndPasswordDetails({
-                      ...otpAndPasswordDetails,
-                      verifyCode: e.target.value,
-                    })
-                  }
-                  placeholder="Enter the verification code"
-                  className="input input-bordered w-full"
-                  required
-                />
-              </div>
-
-              <div className="form-control mb-4">
-                <label htmlFor="password" className="label">
-                  <span className="label-text">New Password</span>
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={otpAndPasswordDetails.password}
-                  onChange={(e) =>
-                    setOtpAndPasswordDetails({
-                      ...otpAndPasswordDetails,
-                      password: e.target.value,
-                    })
-                  }
-                  placeholder="Enter your new password"
-                  className="input input-bordered w-full"
-                  required
-                />
-              </div>
-
-              <div className="form-control mb-4">
-                <label htmlFor="confirmPassword" className="label">
-                  <span className="label-text">Confirm Password</span>
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={otpAndPasswordDetails.confirmPassword}
-                  onChange={(e) =>
-                    setOtpAndPasswordDetails({
-                      ...otpAndPasswordDetails,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  placeholder="Confirm your new password"
-                  className="input input-bordered w-full"
-                  required
-                />
-              </div>
-
-              <div className="form-control mt-4">
-                {isLoading ? (
-                  <button className="btn btn-primary w-full" disabled>
-                    <span className="loading loading-dots loading-md"></span>
-                  </button>
-                ) : (
-                  <button type="submit" className="btn btn-primary w-full">
-                    Reset Password
-                  </button>
-                )}
-              </div>
-            </form>
-          )}
-        </div>
-      </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            placeholder="Enter otp"
+            className="input input-bordered w-full"
+            value={otp}
+            onChange={(e) => setotp(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="New Password"
+            className="input input-bordered w-full"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Confirm Password"
+            className="input input-bordered w-full"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+          />
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.95 }}
+            type="submit"
+            className="btn btn-primary w-full"
+          >
+            Submit
+          </motion.button>
+        </form>
+      </motion.div>
     </div>
   );
-}
+};
 
 export default PasswordReset;

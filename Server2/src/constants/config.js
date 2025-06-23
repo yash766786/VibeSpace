@@ -9,7 +9,7 @@ const corsOptions = {
         "http://localhost:5179",
         process.env.CORS_ORIGIN,
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
     credentials: true,
 };
 

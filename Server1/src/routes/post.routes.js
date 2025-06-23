@@ -1,8 +1,7 @@
 import { Router } from 'express';
 import {
     getAllPosts,
-    getPostById,
-    publishPost,
+    uploadPost,
     updatePost,
     deletePost,
     getPostsOfUser
@@ -19,12 +18,11 @@ router.route("/")
     .get(getAllPosts) // Fetch all posts
     .post(
         upload.single("postFile"),
-          publishPost
+          uploadPost
         );
 
 // Use 'postId' for better clarity
 router.route("/:postId")
-    .get(getPostById) // Fetch post by ID
     .patch(updatePost) // Update post
     .delete(deletePost); // Delete post
 

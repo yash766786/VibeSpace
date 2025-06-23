@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Info } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const containerVariants = {
@@ -39,7 +40,8 @@ const LandingPage = () => {
           className="text-lg md:text-xl text-gray-700 mb-10"
           variants={itemVariants}
         >
-          Connect, Share, and Vibe with people around the globe. Join the new social experience built for the modern world.
+          Connect, Share, and Vibe with people around the globe. Join the new
+          social experience built for the modern world.
         </motion.p>
 
         <motion.div
@@ -64,6 +66,17 @@ const LandingPage = () => {
             >
               Sign In
             </motion.button>
+          </Link>
+        </motion.div>
+
+        {/* ✅ About Link */}
+        <motion.div
+          className="mt-6 text-sm text-gray-600 hover:text-primary transition flex justify-center items-center gap-1"
+          variants={itemVariants}
+        >
+          <Info className="w-4 h-4 inline-block" />
+          <Link to="/about" className="underline underline-offset-2">
+            Learn more about VibeSpace
           </Link>
         </motion.div>
 

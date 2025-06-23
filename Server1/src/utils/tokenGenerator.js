@@ -13,7 +13,6 @@ const generateAccessToken = async (user) => {
 };
 
 const generateResetToken = async (email) => {
-    console.log("--generating token--")
     return Jwt.sign(
         { 
             email, 

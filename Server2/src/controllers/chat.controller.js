@@ -13,7 +13,6 @@ import { isValidObjectId } from "mongoose";
 const getMyChats = asyncHandler(async (req, res, next) => {
     // get userId
     const userId = req.user._id;
-    console.log(req.app.get("io"))
 
     // get chats with having member
     const chats = await Chat.find({ members: userId }).populate(
@@ -61,56 +60,6 @@ const findChat = asyncHandler(async (req, res) => {
         .status(200)
         .json(new ApiResponse(200, { chatId: chat._id, haveChat: true }, "Chat found"));
 });
-
-
-// // todo
-// const deleteChat = asyncHandler(async (req, res, next) => {
-//     const chatId = req.params.id;
-
-//     const chat = await Chat.findById(chatId);
-
-//     if (!chat) return res
-//         .status(404)
-//         .json(new ApiError(404, "Chat not found"));
-
-//     const members = chat.members;
-
-//     if (chat.groupChat && chat.creator.toString() !== req.user.toString())
-//         return res
-//             .status(403)
-//             .json(new ApiError(403, "You are not allowed to delete the group"));
-
-//     if (!chat.groupChat && !chat.members.includes(req.user.toString())) {
-//         return res
-//             .status(403)
-//             .json(new ApiError(403, "You are not allowed to delete the chat"));
-//     }
-
-//     //   Here we have to delete All Messages as well as attachments or files from cloudinary
-//     const messagesWithAttachments = await Message.find({
-//         chat: chatId,
-//         attachments: { $exists: true, $ne: [] },
-//     });
-
-//     const public_ids = [];
-
-//     messagesWithAttachments.forEach(({ attachments }) =>
-//         attachments.forEach(({ public_id }) => public_ids.push(public_id))
-//     );
-
-//     await Promise.all([
-//         destroyFromCloudinary(public_ids),
-//         chat.deleteOne(),
-//         Message.deleteMany({ chat: chatId }),
-//     ]);
-
-//     emitEvent(req, REFETCH_CHATS, members);
-
-//     return res
-//         .status(200)
-//         .json(new ApiResponse(200, "Chat deleted successfully"));
-// });
-
 
 export {
     getMyChats,

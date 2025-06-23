@@ -1,8 +1,6 @@
 // helper/mailer.js
 import  nodemailer  from "nodemailer";
 import { generateMailBody } from "./mailBody.js";
-import { ApiError } from "../utils/ApiError.js";
-import { tr } from "@faker-js/faker";
 
 const transporter = nodemailer.createTransport({
     service: 'gmail', // Change this to 'gmail' if you're using Gmail             // Use `true` for port 465, `false` for other ports

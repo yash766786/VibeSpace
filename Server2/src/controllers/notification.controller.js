@@ -5,23 +5,19 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 
 const fetchNotifications = asyncHandler(async (req, res) => {
     const userId = req.user._id;
-
-    
-
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
 
     const notifications = await Notification.find({
         receiver: userId,
         $or: [
             { seen: false },
-            { seen: true, updatedAt: { $gte: twentyFourHoursAgo } },
-            { type: "CHAT_INVITATION_REQUEST" }
+            { seen: true, updatedAt: { $gte: twoHoursAgo } },
+            { type: "CHAT_INVITATION_REQUEST",  seen: false }
         ]
     })
         .sort({ createdAt: -1 }) // Newest first
         .lean();
 
-        console.log("fetching notifications..", notifications)
     return res.status(200).json(new ApiResponse(200, notifications, "All notification fetched"));
 });
 
@@ -30,7 +26,7 @@ const fetchNotifications = asyncHandler(async (req, res) => {
 const markAllNotificationsSeen = asyncHandler(async (req, res) => {
     const userId = req.user._id;
 
-    await Notification.updateMany(
+    const till = await Notification.updateMany(
         { receiver: userId, seen: false },
         { seen: true, updatedAt: new Date() }
     );
