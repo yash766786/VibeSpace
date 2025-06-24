@@ -10,6 +10,14 @@ import { errorMiddleware } from "./middlewares/error.middleware.js"
 
 // create server
 const app = express();
+
+// define middlewares
+app.use(cors(corsOptions));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use(cookieParser());
+
 const server = new createServer(app);
 const io = new Server(server, {
     cors: corsOptions,
@@ -18,14 +26,6 @@ const io = new Server(server, {
 // set app and io
 app.set("io", io);
 setupSocket(io);
-
-
-// define middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
-app.use(cookieParser());
-app.use(cors(corsOptions));
 
 // // import routes
 import chatRoute from "./routes/chat.route.js"
