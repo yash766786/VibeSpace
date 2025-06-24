@@ -6,6 +6,7 @@ import { User } from "../models/user.model.js";
 
 const verifyToken = asyncHandler(async (req, res, next) => {
     // Retrieve the token from cookies 
+    console.log({cookie: req.cookies})
     const token = req.cookies?.accessToken 
     
     if (!token) {
