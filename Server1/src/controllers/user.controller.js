@@ -13,16 +13,17 @@ import { generateAccessToken, generateResetToken } from "../utils/tokenGenerator
 
 // done
 const registerUser = asyncHandler(async (req, res) => {
+
     // 1. Get user data from request body
     const { username, email, fullname, password } = req.body;
-    const avatarLocalPath = req.file?.path;
+    const avatarBuffer = req.file;
 
     // 2. Validate required fields and avatar
     if ([username, email, fullname, password].some((field) => !field || field.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     }
 
-    if (!avatarLocalPath) {
+    if (!avatarBuffer) {
         throw new ApiError(400, "Avatar file is required");
     }
 
@@ -51,7 +52,8 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     // 4: Upload avatar to Cloudinary
-    const uploadedAvatar = await uploadOnCloudinary(avatarLocalPath);
+    const uploadedAvatar = await uploadOnCloudinary(avatarBuffer);
+
     if (!uploadedAvatar) {
         throw new ApiError(500, "Failed to upload avatar to Cloudinary");
     }
@@ -319,7 +321,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 const updateUserAvatar = asyncHandler(async (req, res) => {
     // get the details and userid
     const userId = req.user?._id
-    const avatarLocalPath = req.file?.path
+    const avatarLocalPath = req.file
 
     // check for file 
     if (!avatarLocalPath) {

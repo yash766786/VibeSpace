@@ -207,7 +207,7 @@ const getPostsOfUser = asyncHandler(async (req, res) => {
 
 const uploadPost = asyncHandler(async (req, res) => {
     const { description } = req.body;
-    const postLocalFilePath = req.file?.path;
+    const postLocalFilePath = req.file;
 
     if (!postLocalFilePath) {
         throw new ApiError(400, "Post file must be required")

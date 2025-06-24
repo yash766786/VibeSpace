@@ -4,7 +4,7 @@ import express from "express"
 import { Server } from "socket.io";
 import { createServer } from "http"
 import cookieParser from "cookie-parser";
-import { corsOptions } from "./constants/config.js";
+import { corsOptions } from "./constants/corsOption.js";
 import { setupSocket } from "./socket/index.socket.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js"
 

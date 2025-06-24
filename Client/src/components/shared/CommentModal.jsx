@@ -11,7 +11,7 @@ import { X, Send, Heart, Trash, MessageCircle } from "lucide-react";
 import { formatMessageTime } from "../../utils/formatMessageTime";
 import { useNavigate } from "react-router";
 
-const CommentModal = ({ postId, onClose }) => {
+const CommentModal = ({ postId, onClose, setCommentCount }) => {
   const { currentUser } = useSelector((state) => state.auth);
   const [comments, setComments] = useState([]);
   const [content, setContent] = useState("");
@@ -55,11 +55,13 @@ const CommentModal = ({ postId, onClose }) => {
 
     setComments([newComment, ...comments]);
     setContent("");
+    setCommentCount(prev => prev+1)
   };
 
   const handleDeleteComment = async (commentId) => {
     await deleteComment(commentId);
     setComments(comments.filter((c) => c._id !== commentId));
+    setCommentCount(prev => prev-1)
   };
 
   const handleToggleCommentLike = async (commentId) => {

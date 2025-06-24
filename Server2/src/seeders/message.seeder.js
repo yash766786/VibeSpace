@@ -29,8 +29,8 @@ export const seedMessages = async (chatId, senderId, count = 10) => {
             });
         }
 
-        await Message.insertMany(messages);
-        console.log(`✅ Seeded ${count} messages for chat ${chatId}`);
+        // await Message.insertMany(messages);
+        // console.log(`✅ Seeded ${count} messages for chat ${chatId}`);
         process.exit(1);
     } catch (error) {
         console.error("❌ Error seeding messages:", error);

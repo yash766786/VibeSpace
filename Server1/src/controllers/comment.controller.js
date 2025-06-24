@@ -13,7 +13,7 @@ const getPostComments = asyncHandler(async (req, res) => {
     // 2. Get page and limit from the request query
     // 3. Get userId from the authenticated user
     const { postId } = req.params;
-    const { page = 1, limit = 3 } = req.query;
+    const { page = 1, limit = 10 } = req.query;
     const userId = req.user._id;
     const objectUserId = new mongoose.Types.ObjectId(userId);
 

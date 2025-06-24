@@ -11,7 +11,7 @@ const getMessages = asyncHandler(async (req, res, next) => {
     // 1. Get the chatId from the request params
     // 2. Get page and limit from the request query
     const chatId = req.params.chatId;
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 20 } = req.query;
     // 3. convert page and limit to integers
     const pageNumber = parseInt(page, 10);
     const pageSize = parseInt(limit, 20);

@@ -55,7 +55,6 @@ const PostCard = ({ post }) => {
     try {
       await deletePost(post._id);
       toast.success("Post deleted");
-      // Optional: emit event or update list
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong");
     }
@@ -75,7 +74,8 @@ const PostCard = ({ post }) => {
     >
       {/* Modals */}
       {showCommentModal && (
-        <CommentModal postId={_id} onClose={() => setShowCommentModal(false)} />
+        <CommentModal postId={_id} onClose={() => setShowCommentModal(false)}
+        setCommentCount={setCommentCount} />
       )}
       {showLikeModal && (
         <LikeModal postId={_id} onClose={() => setShowLikeModal(false)} />
@@ -113,9 +113,6 @@ const PostCard = ({ post }) => {
       </div>
 
       {/* Attachment */}
-      {/* <div className="w-auto h-[400px] aspect-[4/5] flex justify-center items-center overflow-hidden">
-        <RenderAttachment type={fileFormat(postFile?.url)} url={postFile?.url} />
-      </div> */}
       <div className="w-auto h-[400px] aspect-[4/5] overflow-hidden justify-center flex">
         <RenderAttachment type={type} url={postFile?.url} />
       </div>
@@ -177,84 +174,6 @@ const PostCard = ({ post }) => {
       </div>
     </motion.div>
   );
-
-  // return (
-  //   <div className="card w-full bg-base-100 shadow-xl rounded-2xl ml-0.5 mt-2">
-  //     {/* Modals */}
-  //     {showCommentModal && (
-  //       <CommentModal
-  //         postId={post._id}
-  //         onClose={() => setShowCommentModal(false)}
-  //       />
-  //     )}
-  //     {showLikeModal && (
-  //       <LikeModal postId={post._id} onClose={() => setShowLikeModal(false)} />
-  //     )}
-  //     {showEditModal && (
-  //       <PostModal
-  //         post={{ _id: post._id, description }}
-  //         onClose={() => setShowEditModal(false)}
-  //         onUpdate={updatePostDescription}
-  //       />
-  //     )}
-
-  //     {/* Header */}
-  //     <div className="flex items-center justify-between p-4">
-  //       <div className="flex items-center gap-3">
-  //         <div className="avatar">
-  //           <div className="w-10 h-10 rounded-full overflow-hidden">
-  //             <img src={transformImage(owner?.avatar?.url)} alt="user avatar" />
-  //           </div>
-  //         </div>
-  //         <div>
-  //           <h3 className="font-semibold text-sm">{owner?.fullname}</h3>
-  //           <p className="text-xs text-gray-500">@{owner?.username}</p>
-  //         </div>
-  //       </div>
-  //       <div className="text-right text-xs text-gray-400 flex flex-col items-end">
-  //         {updatedAt !== createdAt && <span>updated</span>}
-  //         <span>{formatMessageTime(updatedAt)}</span>
-  //       </div>
-  //     </div>
-
-  //     {/* Image and video only */}
-  //     <div className="w-auto h-[400px] aspect-[4/5] overflow-hidden justify-center flex">
-  //       <RenderAttachment type={fileFormat(postFile?.url)} url={postFile?.url} />
-
-  //     </div>
-
-  //     {/* Description */}
-  //     <div className="p-4">
-  //       <p className="mb-2">{description}</p>
-
-  //       {/* Action Buttons */}
-  //       <div className="flex items-center justify-between text-sm text-gray-700">
-  //         <div className="flex gap-4 items-center">
-  //           <button onClick={handleTogglePostLike}>
-  //             {isLiked ? "💖" : "🤍"} {likeCount}
-  //           </button>
-
-  //           <button onClick={() => setShowCommentModal(true)}>
-  //             💬 {commentCount}
-  //           </button>
-  //           <button onClick={() => setShowLikeModal(true)}>
-  //             ❤️ View Likes
-  //           </button>
-  //         </div>
-
-  //         {/* Owner-only buttons */}
-  //         {currentUser._id === owner._id && (
-  //           <div className="flex gap-2 items-center">
-  //             <button onClick={() => setShowEditModal(true)}>✏️</button>
-  //             <button onClick={handleDeletePost} className="text-red-500">
-  //               🗑️
-  //             </button>
-  //           </div>
-  //         )}
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
 };
 
 export default PostCard;
