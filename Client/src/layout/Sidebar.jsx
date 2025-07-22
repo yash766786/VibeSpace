@@ -2,7 +2,7 @@ import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { logoutUser } from "../api/user.api.js";
-import vibespaceLogo from "../assets/vibespace.svg"; // adjust path
+// import vibespaceLogo from "../assets/vibespace.svg"; // adjust path
 import {
   Home,
   MessageSquare,
@@ -59,7 +59,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
             {/* Logo */}
             <div className="flex justify-between items-center mb-6 md:hidden">
               <div className="flex items-center gap-2">
-                <img src={vibespaceLogo} alt="Logo" className="w-7 h-7" />
+                <img src="/VibeSpace.svg" alt="Logo" className="w-7 h-7" />
                 <span className="text-xl font-semibold">VibeSpace</span>
               </div>
               <button

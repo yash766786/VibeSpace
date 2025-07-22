@@ -90,7 +90,7 @@ const Signup = () => {
           className="relative w-24 h-24 mx-auto mb-6 group"
         >
           <img
-            src={preview || "../assets/VibeSpace.svg"}
+            src={preview || "/VibeSpace.svg"}
             alt="Avatar Preview"
             className="w-24 h-24 rounded-full object-cover border-2 border-primary group-hover:opacity-80 transition"
           />
