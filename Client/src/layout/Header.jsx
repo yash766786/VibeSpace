@@ -5,7 +5,7 @@ import { useSocketEvent } from "../hooks/useSocketEvent";
 import { fetchNotifications } from "../api/server2.api";
 import { addNotification, setNotifications } from "../redux/reducer/notificationSlice";
 import toast from "react-hot-toast";
-import vibespaceLogo from "../assets/vibespace.svg"; // Adjust path if needed
+// import vibespaceLogo from "../assets/VibeSpace.svg"
 
 const Header = ({ setIsSidebarOpen, onSearchClick, onNotificationClick }) => {
   const dispatch = useDispatch();
@@ -29,7 +29,7 @@ const Header = ({ setIsSidebarOpen, onSearchClick, onNotificationClick }) => {
   return (
     <header className="navbar bg-white shadow-md sticky top-0 z-20 px-4">
       <div className="flex-1 flex items-center gap-2">
-        <img src={vibespaceLogo} alt="VibeSpace Logo" className="w-8 h-8" />
+        <img src="/VibeSpace.svg" alt="VibeSpace Logo" className="w-8 h-8" />
         <span className="text-xl font-bold text-primary">VibeSpace</span>
         <button className="md:hidden ml-auto" onClick={() => setIsSidebarOpen(true)}>
           <Menu size={24} />
