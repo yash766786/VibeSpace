@@ -5,6 +5,11 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { conf, configWithHeaders } from "../conf/conf";
 import { setCurrentUser } from "../redux/reducer/authSlice";
+import {
+  logoutUser,
+  resendVerificationCode,
+  verifyEmail,
+} from "../api/user.api";
 
 const Verify = () => {
   const dispatch = useDispatch();
@@ -23,6 +28,38 @@ const Verify = () => {
     }
   }, [currentUser, navigate]);
 
+  // const handleVerifyCode = async (e) => {
+  //   e.preventDefault();
+
+  //   if (!/^\d{6}$/.test(code)) {
+  //     toast.error("Enter a valid 6-digit OTP code");
+  //     return;
+  //   }
+
+  //   setIsVerifying(true);
+  //   const toastId = toast.loading("Verifying...");
+
+  //   try {
+  //     const { data } = await axios.put(
+  //       `${conf.server1Url}/users/verify-email`,
+  //       { verifyCode: code },
+  //       configWithHeaders
+  //     );
+
+  //     if (data.success) {
+  //       toast.success("Email verified successfully!", { id: toastId });
+  //       dispatch(setCurrentUser(data.data));
+  //       navigate("/");
+  //     } else {
+  //       toast.error(data.message || "Verification failed", { id: toastId, duration: 3000 });
+  //     }
+  //   } catch (error) {
+  //     toast.error("Verification failed. Try again.", { id: toastId, duration: 3000 });
+  //   } finally {
+  //     setIsVerifying(false);
+  //   }
+  // };
+
   const handleVerifyCode = async (e) => {
     e.preventDefault();
 
@@ -35,21 +72,22 @@ const Verify = () => {
     const toastId = toast.loading("Verifying...");
 
     try {
-      const { data } = await axios.put(
-        `${conf.server1Url}/users/verify-email`,
-        { verifyCode: code },
-        configWithHeaders
-      );
+      // No need to check data.success here — it's already a success
 
-      if (data.success) {
-        toast.success("Email verified successfully!", { id: toastId });
-        dispatch(setCurrentUser(data.data));
-        navigate("/");
-      } else {
-        toast.error(data.message || "Verification failed", { id: toastId, duration: 3000 });
-      }
-    } catch (error) {
-      toast.error("Verification failed. Try again.", { id: toastId, duration: 3000 });
+      await verifyEmail({ verifyCode: code });
+      await logoutUser(); // Clear cookie/session
+      dispatch(setCurrentUser(null)); // Clear Redux
+      navigate("/login");
+
+      toast.success("Email verified! Please log in again.", {
+        id: toastId,
+        duration: 3000,
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Something went wrong", {
+        id: toastId,
+        duration: 3000,
+      });
     } finally {
       setIsVerifying(false);
     }
@@ -60,18 +98,14 @@ const Verify = () => {
     const toastId = toast.loading("Resending OTP...");
 
     try {
-      const { data } = await axios.get(
-        `${conf.server1Url}/users/resend-verifycode`,
-        configWithHeaders
-      );
-
-      if (data.success) {
-        toast.success(`${data.message}`, { id: toastId, duration: 3000 });
-      } else {
-        toast.error(data.message || "Failed to resend OTP", { id: toastId, duration: 3000 });
-      }
-    } catch (error) {
-      toast.error("Failed to resend OTP", { id: toastId, duration: 3000 });
+      const { data } = await resendVerificationCode();
+      // If you're confident backend sends proper 2xx only on true success
+      toast.success(data.message, { id: toastId, duration: 3000 });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Something went wrong", {
+        id: toastId,
+        duration: 3000,
+      });
     } finally {
       setIsResending(false);
     }

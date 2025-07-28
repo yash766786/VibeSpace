@@ -6,8 +6,8 @@ import { User } from "../models/user.model.js";
 
 const verifyToken = asyncHandler(async (req, res, next) => {
     // Retrieve the token from cookies 
-    console.log({request: req})
-    const token = req.cookies?.accessToken 
+    // console.log({request: req})
+    const token = req.cookies?.accessTokenWs 
     
     if (!token) {
         throw new ApiError(401, "Please authenticate using a valid token")
@@ -24,7 +24,7 @@ const verifyToken = asyncHandler(async (req, res, next) => {
 const socketAuthenticator = asyncHandler(async (err, socket, next) => {
     if (err) return next(err);
 
-    const authToken = socket.request.cookies["accessToken"] || "accessToken";
+    const authToken = socket.request.cookies["accessTokenWs"] || "accessTokenWs";
     if (!authToken){
         throw new ApiError(401, "Please authenticate using a valid token")
     }

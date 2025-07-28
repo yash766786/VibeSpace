@@ -27,13 +27,15 @@ const io = new Server(server, {
 app.set("io", io);
 setupSocket(io);
 
-// // import routes
+// import routes
+import userRouter from "./routes/user.route.js";
 import chatRoute from "./routes/chat.route.js"
 import messageRoute from "./routes/message.route.js"
 import friendRequestRoute from "./routes/friendRequest.route.js"
 import notificationRoute from "./routes/notification.route.js"
 
-// // declare routes
+// declare routes
+app.use("/api/v3/users", userRouter);
 app.use("/api/v3/chats", chatRoute);
 app.use("/api/v3/messages", messageRoute);
 app.use("/api/v3/friendRequests", friendRequestRoute);

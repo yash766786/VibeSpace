@@ -27,8 +27,6 @@ const NotificationModal = ({ onClose }) => {
     return () => clearTimeout(timeout);
   }, []);
 
-  // const
-
   const handleNotificationClick = async (notificationId) => {
     try {
       setLoadingId(notificationId);

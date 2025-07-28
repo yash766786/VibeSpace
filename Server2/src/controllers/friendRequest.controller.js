@@ -11,7 +11,7 @@ import { User } from "../models/user.model.js";
 
 
 const sendFriendRequest = asyncHandler(async (req, res) => {
-    const userId = req.user._id
+    const userId = req.user._id;
     const { targetUserId } = req.body;
     const message = (req.body.message || "").trim();
 
@@ -19,59 +19,75 @@ const sendFriendRequest = asyncHandler(async (req, res) => {
         throw new ApiError(400, "You cannot send a request to yourself");
     }
 
-    const [request, existedChat, existedNotification] = await Promise.all([
+    const [request, existedChat, notification] = await Promise.all([
         FriendRequest.findOne({ sender: userId, receiver: targetUserId }),
-        Chat.findOne({
-            members: { $all: [userId, targetUserId] },
-        }),
+        Chat.findOne({ members: { $all: [userId, targetUserId] } }),
         Notification.findOne({
             receiver: targetUserId,
-            sender: userId, type: NotificationTypes.CHAT_INVITATION_REQUEST
-        })
-    ])
+            sender: userId,
+            type: NotificationTypes.CHAT_INVITATION_REQUEST
+        }),
+    ]);
 
     if (existedChat) {
-        throw new ApiError(400, "Chat Already Exist");
+        throw new ApiError(400, "Chat already exists");
     }
 
-    if (request) await request.deleteOne()
-    if (existedNotification) await existedNotification.deleteOne();
-
-    const [newRequest, user] = await Promise.all([
-        FriendRequest.create({
+    // Update request or create new
+    const friendRequest = request
+        ? await FriendRequest.findByIdAndUpdate(
+            request._id,
+            { status: "pending" }, // reset status if needed
+            { new: true }
+        )
+        : await FriendRequest.create({
             sender: userId,
             receiver: targetUserId,
-        }),
-        User.findById(userId).select("username avatar")
-    ])
+        });
 
-    const newNotification = await Notification.create({
-        receiver: targetUserId,
-        sender: userId,
-        content: message.trim() || "New Friend is waiting to chat with you",
-        type: NotificationTypes.CHAT_INVITATION_REQUEST,
-        metadata: {
-            requestId: newRequest._id,
-            status: newRequest.status,
-            user
-        }
-    })
+    const user = await User.findById(userId).select("username avatar");
 
-    // Emit socket event to other user in the chat
+    // Update notification or create new
+    const newNotification = notification
+        ? await Notification.findByIdAndUpdate(
+            notification._id,
+            {
+                content: message || "New Friend is waiting to chat with you",
+                metadata: {
+                    requestId: friendRequest._id,
+                    status: friendRequest.status,
+                    user,
+                },
+                seen: false,
+            },
+            { new: true }
+        )
+        : await Notification.create({
+            receiver: targetUserId,
+            sender: userId,
+            content: message || "New Friend is waiting to chat with you",
+            type: NotificationTypes.CHAT_INVITATION_REQUEST,
+            metadata: {
+                requestId: friendRequest._id,
+                status: friendRequest.status,
+                user,
+            },
+        });
+
+    // Emit to receiver via socket
     const socketId = onlineUsers.get(targetUserId);
     if (socketId) {
         req.app.get("io").to(socketId).emit(NEW_NOTIFICATION_ALERT, {
             userId,
             newNotification,
-            targetUserId
+            targetUserId,
         });
     }
 
     return res
         .status(200)
-        .json(new ApiResponse(200, newNotification, "Friend Request Sent"))
+        .json(new ApiResponse(200, newNotification, "Friend Request Sent"));
 });
-
 
 const respondFriendRequest = asyncHandler(async (req, res) => {
     const userId = req.user._id;

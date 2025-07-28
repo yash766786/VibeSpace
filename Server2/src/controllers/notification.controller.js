@@ -15,7 +15,7 @@ const fetchNotifications = asyncHandler(async (req, res) => {
             { type: "CHAT_INVITATION_REQUEST",  seen: false }
         ]
     })
-        .sort({ createdAt: -1 }) // Newest first
+        .sort({ updatedAt: -1 }) // Newest first
         .lean();
 
     return res.status(200).json(new ApiResponse(200, notifications, "All notification fetched"));

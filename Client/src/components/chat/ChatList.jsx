@@ -10,50 +10,42 @@ import { useSocket } from "../../context/SocketContext";
 const ChatList = ({ setSelectedChat, selectedChat }) => {
   const dispatch = useDispatch();
   const { socket } = useSocket();
-  const { chats } = useSelector((state) => state.chats); 
+  const { chats } = useSelector((state) => state.chats);
   const onlineUsers = useSelector((state) => state.onlineUsers.onlineUsers);
   const { currentUser } = useSelector((state) => state.auth);
 
   useEffect(() => {
-  if (!socket) return;
+    if (!socket) return;
 
-  socket.emit("CHECK_ONLINE", currentUser?._id);
-  socket.on(ONLINE_USERS, (userIds) => {
-    dispatch(setOnlineUsers(userIds)); 
-  });
+    socket.emit("CHECK_ONLINE", currentUser?._id);
+    socket.on(ONLINE_USERS, (userIds) => {
+      dispatch(setOnlineUsers(userIds));
+    });
 
-  return () => {
-    socket.off(ONLINE_USERS);
-  };
-}, [socket]);
+    return () => {
+      socket.off(ONLINE_USERS);
+    };
+  }, [socket]);
 
   return (
-  <div className="h-full overflow-y-auto px-3 py-4">
-    {chats.map((chat) => (
-      <ChatItem
-        key={chat._id}
-        chat={chat}
-        isSelected={selectedChat?._id === chat._id}
-        onSelect={setSelectedChat}
-        isOnline={onlineUsers.includes(chat.friend._id)}
-      />
-    ))}
-  </div>
-);
-
-  // return (
-  //   <div className="h-full overflow-y-auto p-4">
-  //     {chats.map((chat) => (
-  //       <ChatItem
-  //         key={chat._id}
-  //         chat={chat}
-  //         isSelected={selectedChat?._id === chat._id}
-  //         onSelect={setSelectedChat}
-  //         isOnline={onlineUsers.includes(chat.friend._id)}
-  //       />
-  //     ))}
-  //   </div>
-  // );
+    <div className="h-full overflow-y-auto px-3 py-4">
+      {chats.length > 0 ? (
+        chats.map((chat) => (
+          <ChatItem
+            key={chat._id}
+            chat={chat}
+            isSelected={selectedChat?._id === chat._id}
+            onSelect={setSelectedChat}
+            isOnline={onlineUsers.includes(chat.friend._id)}
+          />
+        ))
+      ) : (
+        <p className="text-sm text-gray-500 text-center mt-10">
+          You don&apos;t have any chats yet.
+        </p>
+      )}
+    </div>
+  );
 };
 
 export default ChatList;

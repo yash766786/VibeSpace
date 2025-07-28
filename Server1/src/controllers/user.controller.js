@@ -219,6 +219,7 @@ const resendVerificationCode = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async (req, res) => {
     // Step 1: Get login details -> username, email, password
     const { email, password } = req.body;
+    console.log(req.body)
 
     // Step 2: Check validation -> need anyone field (username or email) and password
     if (!email || !password) {
@@ -226,10 +227,12 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     // Step 3: Find the user
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: email.trim() });
     if (!user) {
         throw new ApiError(404, "User does not exist");
     }
+
+    console.log(user)
 
     // Step 4: Check password
     const isPasswordCorrect = await user.verifyPassword(password);
@@ -245,6 +248,8 @@ const loginUser = asyncHandler(async (req, res) => {
     delete loggedInUser.password;
     delete loggedInUser.verifyCode;
     delete loggedInUser.verifyCodeExpiry;
+
+    
 
     // Step 7: Send response with cookie
     return res

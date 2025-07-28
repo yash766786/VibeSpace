@@ -1,7 +1,7 @@
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { logoutUser } from "../api/user.api.js";
+import { clearTokenFromServer2, logoutUser } from "../api/user.api.js";
 // import vibespaceLogo from "../assets/vibespace.svg"; // adjust path
 import {
   Home,
@@ -15,18 +15,21 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useWindowWidth } from "../hooks/useWindowWidth ";
 import { Info } from "lucide-react";
+import { setCurrentUser } from "../redux/reducer/authSlice.js";
 
 const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
   const width = useWindowWidth();
   const isDesktop = width >= 768;
 
   const { currentUser } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      const { data } = await logoutUser();
-      if (data.success) navigate("/landing");
+      await Promise.all([logoutUser(), clearTokenFromServer2()]);
+      dispatch(setCurrentUser(null)); // Clear Redux
+      navigate("/login");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong");
     }

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
@@ -6,7 +5,7 @@ import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 
 import { setCurrentUser } from "../redux/reducer/authSlice";
-import { loginUser } from "../api/user.api";
+import { getTokenFromServer2, loginUser } from "../api/user.api";
 import ForgotPasswordModal from "../components/shared/ForgetPasswordModal";
 
 const Login = () => {
@@ -19,43 +18,100 @@ const Login = () => {
     password: "",
   };
   const [user, setUser] = useState(credentials);
-  const [showForgetPasswordModal, setShowForgetPasswordModal] = useState(false)
+  const [showForgetPasswordModal, setShowForgetPasswordModal] = useState(false);
+
+  // const handleLogin = async (e) => {
+  //   e.preventDefault();
+
+  //   setIsLoading(true);
+  //   const toastId = toast.loading("Logging In...");
+  //   try {
+  //     const { data } = await loginUser(user);
+  //     console.log(data);
+  //     if (!data.success) {
+  //       toast.error(`${data.message}`, { id: toastId });
+  //     } else {
+  //       dispatch(setCurrentUser(data.data));
+  //       if (!data.data.isVerified) {
+  //         navigate("/verify");
+  //         toast.dismiss(toastId);
+  //         toast.success("Please verify your email First");
+  //       } else {
+  //         navigate("/");
+  //         toast.dismiss(toastId);
+  //         toast.success(`Welcome back! ${data.data.fullname}`);
+  //       }
+  //     }
+  //   } catch (err) {
+  //     toast.error(err?.response?.data?.message || "Something went wrong", {
+  //       id: toastId,
+  //       duration: 3000,
+  //     });
+  //   } finally {
+  //     toast.dismiss(toastId);
+  //     setIsLoading(false);
+  //     setUser(credentials);
+  //   }
+  // };
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     setIsLoading(true);
     const toastId = toast.loading("Logging In...");
+
     try {
+      // Step 1: Login to Server 1
       const { data } = await loginUser(user);
       if (!data.success) {
         toast.error(`${data.message}`, { id: toastId });
+        return;
+      }
+
+      const userData = data.data;
+      console.log(userData)
+
+      // Step 2: Login to Server 2 (important for REST API cookies)
+      try {
+        const rest = await getTokenFromServer2({ user: userData });
+        console.log("Server 2 login successful", rest);
+      } catch (err) {
+        console.error("Failed to login to Server 2", err);
+        toast.error("Login failed: Server 2 not responding", {
+          id: toastId,
+          duration: 3000,
+        });
+        return; // optionally exit early if both cookies are required
+      }
+
+      dispatch(setCurrentUser(userData));
+      console.log("Setting user");
+      
+      // Step 3: Navigation based on verification
+      if (!userData.isVerified) {
+        navigate("/verify");
+        toast.success("Please verify your email first", { id: toastId });
+        console.log("running1..")
       } else {
-        dispatch(setCurrentUser(data.data));
-        if (!data.data.isVerified) {
-          navigate("/verify");
-          toast.dismiss(toastId);
-          toast.success("Please verify your email First");
-        } else {
-          navigate("/");
-          toast.dismiss(toastId);
-          toast.success(`Welcome back! ${data.data.fullname}`);
-        }
+        navigate("/");
+        toast.success(`Welcome back! ${userData.fullname}`, { id: toastId });
+        console.log("running2..")
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || "Something went wrong", {
-        id: toastId, duration:3000
+        id: toastId,
+        duration: 3000,
       });
     } finally {
       toast.dismiss(toastId);
       setIsLoading(false);
-      setUser(credentials);
+      setUser(credentials); // reset form
     }
   };
 
-  const handleShowForgetPasswordModal = () =>{
+  const handleShowForgetPasswordModal = () => {
     setShowForgetPasswordModal(true);
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 px-4">
@@ -67,8 +123,10 @@ const Login = () => {
       >
         {/* Modal Component */}
         {showForgetPasswordModal && (
-  <ForgotPasswordModal onClose={() => setShowForgetPasswordModal(false)} />
-)}
+          <ForgotPasswordModal
+            onClose={() => setShowForgetPasswordModal(false)}
+          />
+        )}
 
         <h2 className="text-center text-3xl font-bold text-primary mb-6">
           Sign In to Your Account
@@ -150,12 +208,11 @@ const Login = () => {
         {/* Forgot Password */}
         <div className="mt-4 text-center">
           <button
-  className="text-sm font-medium text-primary hover:underline cursor-pointer"
-  onClick={handleShowForgetPasswordModal} // ✅ fixed
->
-  Forgot Password?
-</button>
-
+            className="text-sm font-medium text-primary hover:underline cursor-pointer"
+            onClick={handleShowForgetPasswordModal} // ✅ fixed
+          >
+            Forgot Password?
+          </button>
         </div>
 
         {/* Signup Redirect */}

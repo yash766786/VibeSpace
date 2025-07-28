@@ -13,6 +13,7 @@ const Header = ({ setIsSidebarOpen, onSearchClick, onNotificationClick }) => {
 
   useSocketEvent("NEW_NOTIFICATION_ALERT", ({ newNotification }) => {
     dispatch(addNotification(newNotification));
+    console.log("NEW_NOTIFICATION_ALERT", newNotification)
   });
 
   useEffect(() => {

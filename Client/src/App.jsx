@@ -36,8 +36,8 @@ const App = () => {
       if (data.success) {
         dispatch(setCurrentUser(data.data));
       } 
-    } catch (error) {
-      toast.error(error?.response?.data?.message || "Something went Wrong");
+    } catch {
+      toast("Login to Enjoy");
     } finally {
       dispatch(setAuthChecked(true)); // <--- mark check complete
     }
