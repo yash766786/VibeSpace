@@ -10,18 +10,19 @@ import { errorMiddleware } from "./middlewares/error.middleware.js"
 
 // create server
 const app = express();
+const server = new createServer(app);
 
 // define middlewares
-app.use(cookieParser());
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
-
-const server = new createServer(app);
 const io = new Server(server, {
     cors: corsOptions,
 });
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(express.static("public"));
+
 
 // set app and io
 app.set("io", io);
