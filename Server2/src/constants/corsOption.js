@@ -1,8 +1,7 @@
 const corsOptions = {
     origin: [
-        process.env.CORS_ORIGIN,
-        "https://vibespace-gilt.vercel.app",
-        // "http://localhost:5174",
+        process.env.ORIGIN1,
+        process.env.ORIGIN2,
     ],
     methods: ["GET", "POST", "PATCH", "DELETE", "PUT"],
     credentials: true,

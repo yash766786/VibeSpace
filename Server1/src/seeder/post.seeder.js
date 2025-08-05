@@ -5,11 +5,11 @@ import { User } from "../models/user.model.js";
 const createPost = async (numPosts) => {
     try {
         const users = [
-            "6829be5ac5c2792f2b40aa62",
-            "6829be5ac5c2792f2b40aa67",
-            "6829be5ac5c2792f2b40aa65",
-            "6829be5ac5c2792f2b40aa63",
-            "6829be5ac5c2792f2b40aa64"
+            "6891ab6dcb921ec55b35fdd2",
+            "6891ab6dcb921ec55b35fdd6",
+            "6891ab6dcb921ec55b35fdd4",
+            "6891ab6dcb921ec55b35fdd7",
+            "6891ab6dcb921ec55b35fdd8"
         ]
         const postsPromise = [];
 

@@ -23,7 +23,6 @@ const createUser = async (numUsers) => {
         }
 
         await Promise.all(usersPromise);
-
         console.log("Users created", usersPromise);
 
         process.exit(1);
