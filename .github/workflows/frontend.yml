@@ -59,7 +59,7 @@ jobs:
                     echo "Starting new container..."
                     sudo docker run -d \
                     --name ${{ env.DOCKER_IMAGE_NAME }} \
-                    -p 3000:3000 \
+                    -p 5173:3000 \
                     --restart unless-stopped \
                     ${{ secrets.DOCKER_HUB_USERNAME}}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
