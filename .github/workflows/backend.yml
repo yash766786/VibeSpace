@@ -35,39 +35,55 @@ jobs:
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
+        env:
+          ORIGIN: ${{ secrets.ORIGIN }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+          ACCESS_TOKEN_EXPIRY: ${{ secrets.ACCESS_TOKEN_EXPIRY }}
+          RESET_TOKEN_SECRET: ${{ secrets.RESET_TOKEN_SECRET }}
+          RESET_TOKEN_EXPIRY: ${{ secrets.RESET_TOKEN_EXPIRY }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSKEY: "${{ secrets.EMAIL_PASSKEY }}"
+          DOCKER_IMAGE_NAME: ${{ env.DOCKER_IMAGE_NAME }}
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
         with:
           host: ${{ secrets.EC2_Host }}
           username: ${{ env.EC2_USERNAME }}
           key: ${{ secrets.EC2_Key }}
+          envs: ORIGIN,MONGODB_URI,DB_NAME,ACCESS_TOKEN_SECRET,ACCESS_TOKEN_EXPIRY,RESET_TOKEN_SECRET,RESET_TOKEN_EXPIRY,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,EMAIL_USER,EMAIL_PASSKEY,DOCKER_IMAGE_NAME,DOCKER_HUB_USERNAME
           script: |
             echo "Stopping existing container..."
             sudo docker stop $DOCKER_IMAGE_NAME || true
             sudo docker rm $DOCKER_IMAGE_NAME || true
 
             echo "Removing old image..."
-            sudo docker rmi ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest || true
+            sudo docker rmi $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_NAME:latest || true
 
             echo "Pulling new image..."
-            sudo docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+            sudo docker pull $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_NAME:latest
 
             echo "Starting new container..."
             sudo docker run -d \
               --name $DOCKER_IMAGE_NAME \
-              -e ORIGIN=${{ secrets.ORIGIN }} \
-              -e MONGODB_URI=${{ secrets.MONGODB_URI }} \
-              -e DB_NAME=${{ secrets.DB_NAME }} \
-              -e ACCESS_TOKEN_SECRET=${{ secrets.ACCESS_TOKEN_SECRET }} \
-              -e ACCESS_TOKEN_EXPIRY=${{ secrets.ACCESS_TOKEN_EXPIRY }} \
-              -e RESET_TOKEN_SECRET=${{ secrets.RESET_TOKEN_SECRET }} \
-              -e RESET_TOKEN_EXPIRY=${{ secrets.RESET_TOKEN_EXPIRY }} \
-              -e CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }} \
-              -e CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
-              -e CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
-              -e EMAIL_USER=${{ secrets.EMAIL_USER }} \
-              -e EMAIL_PASSKEY=${{ secrets.EMAIL_PASSKEY }} \
+              -e ORIGIN=$ORIGIN \
+              -e MONGODB_URI=$MONGODB_URI \
+              -e DB_NAME=$DB_NAME \
+              -e ACCESS_TOKEN_SECRET=$ACCESS_TOKEN_SECRET \
+              -e ACCESS_TOKEN_EXPIRY=$ACCESS_TOKEN_EXPIRY \
+              -e RESET_TOKEN_SECRET=$RESET_TOKEN_SECRET \
+              -e RESET_TOKEN_EXPIRY=$RESET_TOKEN_EXPIRY \
+              -e CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME \
+              -e CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY \
+              -e CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET \
+              -e EMAIL_USER=$EMAIL_USER \
+              -e EMAIL_PASSKEY=$EMAIL_PASSKEY \
               -p 9000:9000 \
               --restart unless-stopped \
-              ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+              ${{ secrets.DOCKER_HUB_USERNAME}}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
             echo "Verifying deployment..."
             sudo docker ps
