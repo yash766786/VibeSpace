@@ -47,7 +47,7 @@ jobs:
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           EMAIL_USER: ${{ secrets.EMAIL_USER }}
-          EMAIL_PASSKEY: "${{ secrets.EMAIL_PASSKEY }}"
+          EMAIL_PASSKEY: ${{ secrets.EMAIL_PASSKEY }}
           DOCKER_IMAGE_NAME: ${{ env.DOCKER_IMAGE_NAME }}
           DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
         with:
@@ -80,7 +80,7 @@ jobs:
               -e CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY \
               -e CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET \
               -e EMAIL_USER=$EMAIL_USER \
-              -e EMAIL_PASSKEY=$EMAIL_PASSKEY \
+              -e EMAIL_PASSKEY="$EMAIL_PASSKEY" \
               -p 9000:9000 \
               --restart unless-stopped \
               ${{ secrets.DOCKER_HUB_USERNAME}}/${{ env.DOCKER_IMAGE_NAME }}:latest
