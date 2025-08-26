@@ -1,56 +1,91 @@
-name: Deploy express backend to ec2 
+name: Deploy express backend to EC2
 
-on: 
-    push: 
-        branches: 
-            - main
+on:
+  push:
+    branches:
+      - main
 
-env: 
-    DOCKER_IMAGE_NAME: vibespace-backend
-    EC2_USERNAME: ubuntu            
+env:
+  DOCKER_IMAGE_NAME: vibespace-backend
+  EC2_USERNAME: ubuntu
 
-            
-jobs: 
-    deploy:
-        runs-on: ubuntu-latest
-        steps:
-            - name: checkout-code
-              uses: actions/checkout@v2
-            
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v2
-              
-            - name: Login in to dockerhub
-              uses: docker/login-action@v2 
-              with:
-                username: ${{ secrets.DOCKER_HUB_USERNAME }} 
-                password: ${{ secrets.DOCKER_HUB_TOKEN }}   
-            
-            - name: build and push docker image
-              uses: docker/build-push-action@v2  
-              with: 
-                context: ./Server1
-                file: ./Server1/dockerfile 
-                push: true
-                tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-            - name: Deploy to ec2
-              uses: appleboy/ssh-action@master
-              env: 
-                 ORIGIN: ${{ secrets.ORIGIN }} 
-                 MONGODB_URI: ${{ secrets.MONGODB_URI }}
-                 DB_NAME: ${{ secrets.DB_NAME }}
-                 ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
-                 ACCESS_TOKEN_EXPIRY: ${{ secrets.ACCESS_TOKEN_EXPIRY }}
-                 RESET_TOKEN_SECRET: ${{ secrets.RESET_TOKEN_SECRET }}
-                 RESET_TOKEN_EXPIRY: ${{ secrets.RESET_TOKEN_EXPIRY }}
-                 CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-                 CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-                 CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-                 EMAIL_USER: ${{ secrets.EMAIL_USER }}
-                 EMAIL_PASSKEY: ${{ secrets.EMAIL_PASSKEY }}
-              with: 
-                host: ${{ secrets.EC2_Host }}
-                username: ${{ env.EC2_USERNAME}} 
-                key: ${{ secrets.EC2_Key }}    
-                
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: ./Server1
+          file: ./Server1/dockerfile   
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ORIGIN: ${{ secrets.ORIGIN }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+          ACCESS_TOKEN_EXPIRY: ${{ secrets.ACCESS_TOKEN_EXPIRY }}
+          RESET_TOKEN_SECRET: ${{ secrets.RESET_TOKEN_SECRET }}
+          RESET_TOKEN_EXPIRY: ${{ secrets.RESET_TOKEN_EXPIRY }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASSKEY: ${{ secrets.EMAIL_PASSKEY }}
+          DOCKER_IMAGE_NAME: ${{ env.DOCKER_IMAGE_NAME }}
+          DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
+        with:
+          host: ${{ secrets.EC2_Host }}
+          username: ${{ env.EC2_USERNAME }}
+          key: ${{ secrets.EC2_Key }}
+          envs: ORIGIN,MONGODB_URI,DB_NAME,ACCESS_TOKEN_SECRET,ACCESS_TOKEN_EXPIRY,RESET_TOKEN_SECRET,RESET_TOKEN_EXPIRY,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,EMAIL_USER,EMAIL_PASSKEY,DOCKER_IMAGE_NAME,DOCKER_HUB_USERNAME
+          script: |
+            echo "Stopping existing container..."
+            sudo docker stop $DOCKER_IMAGE_NAME || true
+            sudo docker rm $DOCKER_IMAGE_NAME || true
+
+            echo "Removing old image..."
+            sudo docker rmi $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_NAME:latest || true
+
+            echo "Pulling new image..."
+            sudo docker pull $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_NAME:latest
+
+            echo "Starting new container..."
+            sudo docker run -d \
+              --name $DOCKER_IMAGE_NAME \
+              -e ORIGIN=$ORIGIN \
+              -e MONGODB_URI=$MONGODB_URI \
+              -e DB_NAME=$DB_NAME \
+              -e ACCESS_TOKEN_SECRET=$ACCESS_TOKEN_SECRET \
+              -e ACCESS_TOKEN_EXPIRY=$ACCESS_TOKEN_EXPIRY \
+              -e RESET_TOKEN_SECRET=$RESET_TOKEN_SECRET \
+              -e RESET_TOKEN_EXPIRY=$RESET_TOKEN_EXPIRY \
+              -e CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME \
+              -e CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY \
+              -e CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET \
+              -e EMAIL_USER=$EMAIL_USER \
+              -e EMAIL_PASSKEY=$EMAIL_PASSKEY \
+              -p 9000:9000 \
+              --restart unless-stopped \
+              $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_NAME:latest
+
+            echo "Verifying deployment..."
+            sudo docker ps
+
+            echo "Deployment Successful"
