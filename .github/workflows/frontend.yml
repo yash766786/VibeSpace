@@ -34,6 +34,11 @@ jobs:
                 file: ./Client/dockerfile
                 push: true 
                 tags: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest    
+                build-args: |
+                  VITE_SERVER1_API: ${{ secrets.VITE_SERVER1_API }}
+                  VITE_SERVER2_SOCKET: ${{ secrets.VITE_SERVER2_SOCKET }}
+                  VITE_SERVER2_API: ${{ secrets.VITE_SERVER2_API }} 
+
 
             - name : Deploy to ec2 
               uses : appleboy/ssh-action@master
