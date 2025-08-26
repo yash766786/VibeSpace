@@ -83,7 +83,7 @@ jobs:
               -e EMAIL_PASSKEY=$EMAIL_PASSKEY \
               -p 9000:9000 \
               --restart unless-stopped \
-              $DOCKER_HUB_USERNAME/$DOCKER_IMAGE_NAME:latest
+              ${{ secrets.DOCKER_HUB_USERNAME}}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
             echo "Verifying deployment..."
             sudo docker ps
