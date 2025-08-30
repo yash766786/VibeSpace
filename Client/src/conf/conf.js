@@ -1,7 +1,7 @@
 const conf = {
-  server1Url: String(import.meta.env.VITE_SERVER1_API),
-  server2Url: String(import.meta.env.VITE_SERVER2_API),
-  server2Socket: String(import.meta.env.VITE_SERVER2_SOCKET),
+  server1Url: 'https://vibespacehttp.techynimbus.com/api/v3',
+  server2Url: 'https://vibespaceio.techynimbus.com/api/v3',
+  server2Socket: 'https://vibespaceio.techynimbus.com/',
 }
 
 const configWithHeaders = {
