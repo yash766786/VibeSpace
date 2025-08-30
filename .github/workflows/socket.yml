@@ -83,7 +83,7 @@ jobs:
               -e EMAIL_USER=$EMAIL_USER \
               -e EMAIL_PASSWORD="$EMAIL_PASSKEY" \
               -e CHAT_TOKEN=$CHAT_TOKEN \
-              -p 9000:9000 \
+              -p 9001:9001 \
               --restart unless-stopped \
               ${{ secrets.DOCKER_HUB_USERNAME}}/${{ env.DOCKER_IMAGE_NAME }}:latest
 
