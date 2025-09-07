@@ -22,6 +22,14 @@ const router = Router()
 router.route("/register").post(upload.single("avatar"), registerUser)
 router.route("/login").post(loginUser)
 
+router.route('/health').get((req,res)=>{
+    res.status(200).json({
+        success:true,
+        message:"Success"
+    })
+})
+
+
 // secured routes
 router.route('/verify-email').put(verifyToken, verifyEmail);
 router.route('/resend-verifycode').get(verifyToken, resendVerificationCode);
