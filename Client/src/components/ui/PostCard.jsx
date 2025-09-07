@@ -4,7 +4,7 @@ import { formatMessageTime } from "../../utils/formatMessageTime";
 import LikeModal from "../shared/LikeModal";
 import PostModal from "../shared/PostModal";
 import CommentModal from "../shared/CommentModal";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { deletePost, togglePostLike } from "../../api/server1.api";
 import { fileFormat, transformImage } from "../../utils/features";
@@ -38,10 +38,17 @@ const PostCard = ({ post }) => {
     setDescription(newDesc);
   };
 
+  const lastClickRef = useRef(0);
   const handleTogglePostLike = async (e) => {
     e.preventDefault();
+    const now = Date.now();
+    // debounce: ignore if < 500ms since last click
+    if (now - lastClickRef.current < 500) {
+      toast.error("Wait a moment...");
+      return;
+    }
+    lastClickRef.current = now;
     try {
-      // await axios.post(`/posts/${post._id}/like`);
       await togglePostLike(post._id);
       setIsLiked((prev) => !prev);
       setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));

@@ -64,7 +64,15 @@ const CommentModal = ({ postId, onClose, setCommentCount }) => {
     setCommentCount(prev => prev-1)
   };
 
+  const lastClickRef = useRef(0);
   const handleToggleCommentLike = async (commentId) => {
+    const now = Date.now();
+        // debounce: ignore if < 500ms since last click
+        if (now - lastClickRef.current < 500) {
+          toast.error("Wait a moment...");
+          return;
+        }
+        lastClickRef.current = now;
     await toggleCommentLike(commentId);
     setComments((prev) =>
       prev.map((c) =>
@@ -117,40 +125,7 @@ const CommentModal = ({ postId, onClose, setCommentCount }) => {
               <Send className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Comments */}
-          {/* <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar">
-            {loading ? (
-              <>
-                <CommentSkeleton />
-                <CommentSkeleton />
-                <CommentSkeleton />
-              </>
-            ) : comments.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center">No comments yet.</p>
-            ) : (
-              <>
-                {comments.map((comment) => (
-                  <CommentItem
-                    key={comment._id}
-                    comment={comment}
-                    onDelete={handleDeleteComment}
-                    onToggleLike={handleToggleCommentLike}
-                    onClose={onClose}
-                  />
-                ))}
-                {page < totalPages && (
-                  <button
-                    onClick={() => fetchComments(page + 1)}
-                    className="text-sm text-blue-600 hover:underline block mx-auto"
-                    disabled={loading}
-                  >
-                    {loading ? "Loading..." : "Load more"}
-                  </button>
-                )}
-              </>
-            )}
-          </div> */}
+          
           {/* Comments */}
           <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar">
             {loading ? (

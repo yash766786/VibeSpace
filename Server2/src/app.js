@@ -42,7 +42,6 @@ app.use("/api/v3/messages", messageRoute);
 app.use("/api/v3/friendRequests", friendRequestRoute);
 app.use("/api/v3/notifications", notificationRoute);
 
-
 // define error handling middleware
 app.use(errorMiddleware);
 
