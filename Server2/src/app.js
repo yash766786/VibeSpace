@@ -1,4 +1,4 @@
-// index.js
+// app.js
 import cors from "cors";
 import express from "express"
 import { Server } from "socket.io";

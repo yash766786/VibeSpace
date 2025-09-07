@@ -23,10 +23,6 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All fields are required");
     }
 
-    if (!avatarBuffer) {
-        throw new ApiError(400, "Avatar file is required");
-    }
-
     // 3: Check for existing user by email or by username
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
         User.findOne({ email }),
@@ -51,16 +47,25 @@ const registerUser = asyncHandler(async (req, res) => {
         }
     }
 
-    // 4: Upload avatar to Cloudinary
-    const uploadedAvatar = await uploadOnCloudinary(avatarBuffer);
-
-    if (!uploadedAvatar) {
-        throw new ApiError(500, "Failed to upload avatar to Cloudinary");
-    }
-    const avatar = {
-        public_id: uploadedAvatar.public_id,
-        url: uploadedAvatar.url,
+    const DEFAULT_AVATAR = {
+        public_id: "default-avatar_i9k939",
+        url: "https://res.cloudinary.com/dsg4wtqal/image/upload/v1757251198/default-avatar_i9k939.png"
     };
+
+    let avatar = DEFAULT_AVATAR
+
+    // 4: Upload avatar to Cloudinary
+    if (avatarBuffer) {
+        const uploadedAvatar = await uploadOnCloudinary(avatarBuffer);
+        if (!uploadedAvatar) {
+            throw new ApiError(500, "Failed to upload avatar to Cloudinary");
+        }
+
+        avatar = {
+            public_id: uploadedAvatar.public_id,
+            url: uploadedAvatar.url,
+        };
+    }
 
     // 5: Generate random 6-digit verification code
     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();

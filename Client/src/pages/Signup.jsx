@@ -30,13 +30,12 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    if (!avatar) return toast.error("Please upload an avatar");
 
     const formData = new FormData();
     Object.entries(user).forEach(([key, value]) =>
       formData.append(key, value)
     );
-    formData.append("avatar", avatar);
+    if(avatar) formData.append("avatar", avatar);
 
     const toastId = toast.loading("Signing up...");
     setIsLoading(true);
@@ -90,7 +89,7 @@ const Signup = () => {
           className="relative w-24 h-24 mx-auto mb-6 group"
         >
           <img
-            src={preview || "/VibeSpace.svg"}
+            src={preview || "/default-avatar.png"}
             alt="Avatar Preview"
             className="w-24 h-24 rounded-full object-cover border-2 border-primary group-hover:opacity-80 transition"
           />
