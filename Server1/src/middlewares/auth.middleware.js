@@ -2,6 +2,7 @@
 import Jwt from "jsonwebtoken";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
+import { DEMO_USER_ID } from "../constant/constant.js";
 
 const verifyToken = asyncHandler(async (req, res, next) => {
     // Retrieve the token from cookies
@@ -15,7 +16,6 @@ const verifyToken = asyncHandler(async (req, res, next) => {
     req.user = decodedToken
     next();
 })
-
 
 const VerifyResetToken = asyncHandler(async (req, res, next) => {
     // Retrieve the token from cookies 
@@ -39,8 +39,16 @@ const VerifyResetToken = asyncHandler(async (req, res, next) => {
     next();
 });
 
+const verifyDemoUser = asyncHandler(async (req, res, next) => {
+    if(req.user._id === DEMO_USER_ID){
+        throw new ApiError(403, "This feature is not allowed for demo User")
+    }
+    next();
+})
+
 
 export {
     verifyToken,
-    VerifyResetToken
+    VerifyResetToken,
+    verifyDemoUser
 }

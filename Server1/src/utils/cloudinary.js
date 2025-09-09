@@ -24,7 +24,7 @@ const uploadOnCloudinary = async (file) => {
 };
 
 const destroyFromCloudinary = async (publicId) =>{
-    if(!publicId) return null;
+    if(!publicId || publicId == "default-avatar_i9k939") return null;
 
     try {
         // delete the file from Cloudinary

@@ -6,10 +6,15 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { sendVerificationEmail } from "../helper/mailer.js";
-import { cookieOptions, cookieOptionsForResetPassword, deleteCookieOptions } from "../constant/constant.js";
+import { cookieOptions, cookieOptionsForResetPassword, DEFAULT_AVATAR, deleteCookieOptions } from "../constant/constant.js";
 import { destroyFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { generateAccessToken, generateResetToken } from "../utils/tokenGenerator.js";
 
+const healthCheck = asyncHandler(async (req, res) => {
+    return res
+        .status(200)
+        .json(new ApiResponse(200, null, "User service is up and running"))
+});
 
 // done
 const registerUser = asyncHandler(async (req, res) => {
@@ -46,11 +51,6 @@ const registerUser = asyncHandler(async (req, res) => {
             await existingUserByUsername.deleteOne();
         }
     }
-
-    const DEFAULT_AVATAR = {
-        public_id: "default-avatar_i9k939",
-        url: "https://res.cloudinary.com/dsg4wtqal/image/upload/v1757251198/default-avatar_i9k939.png"
-    };
 
     let avatar = DEFAULT_AVATAR
 
@@ -470,7 +470,6 @@ const getUserProfile = asyncHandler(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, responseData, "User profile fetched successfully"));
 });
 
-
 // FORGOT PASSWORD: step 1
 const initiateForgotPasswordReset = asyncHandler(async (req, res) => {
 
@@ -567,6 +566,7 @@ const verifyCodeAndResetPassword = asyncHandler(async (req, res) => {
 });
 
 export {
+    healthCheck,
     registerUser,
     verifyEmail,
     resendVerificationCode,
