@@ -5,8 +5,8 @@ import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 
 import { setCurrentUser } from "../redux/reducer/authSlice";
-import { getTokenFromServer2, loginUser } from "../api/user.api";
 import ForgotPasswordModal from "../components/shared/ForgetPasswordModal";
+import { loginUser } from "../api/user.api";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -56,13 +56,14 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+    console.log("Logging In...")
     setIsLoading(true);
     const toastId = toast.loading("Logging In...");
 
     try {
       // Step 1: Login to Server 1
       const { data } = await loginUser(user);
+      console.log(data)
       if (!data.success) {
         toast.error(`${data.message}`, { id: toastId });
         return;
@@ -72,17 +73,7 @@ const Login = () => {
       console.log(userData)
 
       // Step 2: Login to Server 2 (important for REST API cookies)
-      try {
-        const rest = await getTokenFromServer2({ user: userData });
-        console.log("Server 2 login successful", rest);
-      } catch (err) {
-        console.error("Failed to login to Server 2", err);
-        toast.error("Login failed: Server 2 not responding", {
-          id: toastId,
-          duration: 3000,
-        });
-        return; // optionally exit early if both cookies are required
-      }
+      // skipped (using same tokens now)
 
       dispatch(setCurrentUser(userData));
       console.log("Setting user");

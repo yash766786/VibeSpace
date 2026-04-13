@@ -18,3 +18,14 @@ export const fetchNotifications = () => server2Json.get(`/notifications/`);
 export const markAllNotificationsSeen = () => server2Json.patch(`/notifications/mark-all-seen`);
 
 
+// 🔵 Send message to Vibe
+export const sendVibeMessage = (jsonData) =>
+  server2Json.post(`/vibe/chat`, jsonData);
+
+// 🟢 Get messages (with pagination)
+export const getVibeMessages = (page = 1, limit = 20) =>
+  server2Json.get(`/vibe/messages?page=${page}&limit=${limit}`);
+
+// 🧠 Get user memory (for later use)
+export const getVibeMemory = () =>
+  server2Json.get(`/vibe/memory`);

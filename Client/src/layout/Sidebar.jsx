@@ -1,7 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { clearTokenFromServer2, logoutUser } from "../api/user.api.js";
+import { logoutUser } from "../api/user.api.js";
 // import vibespaceLogo from "../assets/vibespace.svg"; // adjust path
 import {
   Home,
@@ -11,6 +11,7 @@ import {
   Settings,
   LogOut,
   X,
+  Sparkles 
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWindowWidth } from "../hooks/useWindowWidth ";
@@ -27,7 +28,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
 
   const handleLogout = async () => {
     try {
-      await Promise.all([logoutUser(), clearTokenFromServer2()]);
+      await logoutUser();
       dispatch(setCurrentUser(null)); // Clear Redux
       navigate("/login");
     } catch (error) {
@@ -77,6 +78,7 @@ const Sidebar = ({ isSidebarOpen, setIsSidebarOpen }) => {
             <nav className="space-y-2">
               <SidebarLink to="/" icon={<Home />} label="Home" />
               <SidebarLink to="/chat" icon={<MessageSquare />} label="Chats" />
+              <SidebarLink to="/vibe" icon={<Sparkles />} label="Vibe" />
               <SidebarLink to="/post" icon={<FilePlus />} label="Post" />
               <SidebarLink
                 to={`/${currentUser?.username}`}

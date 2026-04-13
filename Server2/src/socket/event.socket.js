@@ -2,11 +2,9 @@
 import { onlineUsers } from "./index.socket.js";
 import {
   CHECK_ONLINE,
-  NEW_MESSAGE_ALERT,
-  NEW_MESSAGE_SEND,
   ONLINE_USERS,
-  START_TYPING, 
-  STOP_TYPING, 
+  START_TYPING,
+  STOP_TYPING,
   TYPING_STATUS
 } from "../constants/events.js";
 

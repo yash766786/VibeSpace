@@ -20,6 +20,7 @@ export const setupSocket = (io) => {
     io.on("connection", async (socket) => {
         const [socketId, userId] = [socket.id, socket.user._id];
         onlineUsers.set(userId, socketId); // ✅ Store socketId for the user
+        console.log(`${socket} joined`)
 
         // ✅ Join user to their chat rooms
         const userChats = await Chat.find({ members: userId }).select("_id");

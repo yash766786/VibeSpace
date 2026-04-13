@@ -29,19 +29,18 @@ app.set("io", io);
 setupSocket(io);
 
 // import routes
-import userRouter from "./routes/user.route.js";
 import chatRoute from "./routes/chat.route.js"
 import messageRoute from "./routes/message.route.js"
 import friendRequestRoute from "./routes/friendRequest.route.js"
 import notificationRoute from "./routes/notification.route.js"
+import vibeRoutes from "./routes/vibe.routes.js";
 
 // declare routes
-app.use("/api/v3/users", userRouter);
 app.use("/api/v3/chats", chatRoute);
 app.use("/api/v3/messages", messageRoute);
 app.use("/api/v3/friendRequests", friendRequestRoute);
 app.use("/api/v3/notifications", notificationRoute);
-
+app.use("/api/v3/vibe", vibeRoutes);
 // define error handling middleware
 app.use(errorMiddleware);
 

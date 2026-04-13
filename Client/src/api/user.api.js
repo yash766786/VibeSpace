@@ -19,8 +19,3 @@ export const getUserProfile = (username) => server1Json.get(`/users/profile/${us
 
 export const initiateForgotPasswordReset = (jsonData) => server1Json.post("/users/forgot-password-reset", jsonData)
 export const verifyCodeAndResetPassword = (jsonData) => server1Json.post("/users/reset-password", jsonData)
-
-
-// server2
-export const getTokenFromServer2 = (jsonData) => server2Json.post('/users/login', jsonData);
-export const clearTokenFromServer2 = () => server2Json.get('/users/logout');
