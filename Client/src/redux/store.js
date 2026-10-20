@@ -5,6 +5,7 @@ import postSlice from './reducer/postSlice.js';
 import chatSlice from './reducer/chatSlice.js';
 import onlineSlice from './reducer/onlineSlice.js'; 
 import notificationSlice from './reducer/notificationSlice.js'; 
+import feedSlice from "./reducer/feedSlice.js";
 
 export const store = configureStore({
   reducer: {
@@ -13,5 +14,6 @@ export const store = configureStore({
     [chatSlice.name]: chatSlice.reducer,
     [onlineSlice.name]: onlineSlice.reducer,
     [notificationSlice.name]: notificationSlice.reducer,
+    [feedSlice.name]: feedSlice.reducer,
   },
 });

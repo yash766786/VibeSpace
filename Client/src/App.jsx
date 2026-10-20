@@ -19,6 +19,8 @@ const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
 const PasswordReset = lazy(() => import("./pages/PasswordReset.jsx")); // new page
 const Vibe = lazy(() => import("./pages/Vibe.jsx"));
+const Feed = lazy(() => import("./pages/Feed.jsx"));
+const CreateFeed = lazy(() => import("./pages/CreateFeed.jsx"));
 
 // Route Guards
 import ProtectedRoute from "./routes/ProtectedRoute.jsx";
@@ -105,6 +107,9 @@ if (!isAuthChecked) return <FullPageLoader />;
             {/* <Route path="/chat" element={<Chat />} /> */}
             <Route path="/chat/:chatId?" element={<Chat />} />
             <Route path="/vibe" element={<Vibe />} />
+
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/create-feed" element={<CreateFeed />} />
 
           </Route>
         </Routes>

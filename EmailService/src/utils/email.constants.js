@@ -1,0 +1,7 @@
+const EMAIL_TYPES = Object.freeze({
+    REGISTER: "REGISTER",
+    PASSWORD_RESET: "PASSWORD_RESET",
+    WELCOME: "WELCOME",
+});
+
+export { EMAIL_TYPES };

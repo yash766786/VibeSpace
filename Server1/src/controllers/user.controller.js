@@ -5,10 +5,11 @@ import { Follow } from "../models/follow.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { sendVerificationEmail } from "../helper/mailer.js";
 import { cookieOptions, cookieOptionsForResetPassword, DEFAULT_AVATAR, deleteCookieOptions } from "../constant/constant.js";
 import { destroyFromCloudinary, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { generateAccessToken, generateResetToken } from "../utils/tokenGenerator.js";
+import { randomUUID } from "crypto";
+import { publishEmailEvent } from "../config/rabbitmq.js";
 
 const healthCheck = asyncHandler(async (req, res) => {
     return res
@@ -23,12 +24,12 @@ const registerUser = asyncHandler(async (req, res) => {
     const { username, email, fullname, password } = req.body;
     const avatarBuffer = req.file;
 
-    // 2. Validate required fields and avatar
+    // 2. Validate required fields
     if ([username, email, fullname, password].some((field) => !field || field.trim() === "")) {
         throw new ApiError(400, "All fields are required");
     }
 
-    // 3: Check for existing user by email or by username
+    // 3. Check for existing user by email or username
     const [existingUserByEmail, existingUserByUsername] = await Promise.all([
         User.findOne({ email }),
         User.findOne({ username: username.toLowerCase() })
@@ -52,11 +53,12 @@ const registerUser = asyncHandler(async (req, res) => {
         }
     }
 
-    let avatar = DEFAULT_AVATAR
+    // 4. Upload avatar to Cloudinary
+    let avatar = DEFAULT_AVATAR;
 
-    // 4: Upload avatar to Cloudinary
     if (avatarBuffer) {
         const uploadedAvatar = await uploadOnCloudinary(avatarBuffer);
+
         if (!uploadedAvatar) {
             throw new ApiError(500, "Failed to upload avatar to Cloudinary");
         }
@@ -67,11 +69,11 @@ const registerUser = asyncHandler(async (req, res) => {
         };
     }
 
-    // 5: Generate random 6-digit verification code
+    // 5. Generate 6-digit verification code
     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verifyCodeExpiry = Date.now() + 10 * 60 * 1000; // Expires in 10 minutes
+    const verifyCodeExpiry = Date.now() + 10 * 60 * 1000;
 
-    // 6: Create user object in database
+    // 6. Create user in database
     const newUser = await User.create({
         username: username.toLowerCase(),
         email,
@@ -89,18 +91,19 @@ const registerUser = asyncHandler(async (req, res) => {
     // 7. Generate access token
     const accessToken = await generateAccessToken(newUser);
 
-    // 8. Send verification email
-    const subject = 'Your OTP Code for Email Verification'
-    const emailSentStatus = await sendVerificationEmail(newUser, verifyCode, "REGISTER", subject);
+    // 8. Publish email event to RabbitMQ
+    // EmailService will handle sending, retries and DLQ
+    await publishEmailEvent({
+        eventId: randomUUID(),
+        email: newUser.email,
+        username: newUser.username,
+        fullname: newUser.fullname,
+        emailType: "REGISTER",
+        data: { verificationToken: verifyCode },
+        retryCount: 0
+    });
 
-    if (!emailSentStatus) {
-        // Rollback: delete avatar from Cloudinary and user object from DB
-        await destroyFromCloudinary(newUser.avatar.public_id);
-        await newUser.deleteOne();
-        throw new ApiError(500, "Failed to send verification email. Please try again later.");
-    }
-
-    // 9. Remove sensitive fields from the user object
+    // 9. Remove sensitive fields from user object
     const createdUser = newUser.toObject();
     delete createdUser.password;
     delete createdUser.verifyCode;
@@ -115,6 +118,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 // done
 const verifyEmail = asyncHandler(async (req, res) => {
+
     // 1. Get the userId from the token
     const userId = req.user?._id;
     if (!userId) {
@@ -133,12 +137,12 @@ const verifyEmail = asyncHandler(async (req, res) => {
         throw new ApiError(404, "User not found");
     }
 
-    // 4. check if user is already verified
+    // 4. Check if user is already verified
     if (user.isVerified) {
         throw new ApiError(409, "You are already verified");
     }
 
-    // 5. check the verifyCodeExpiry
+    // 5. Check if verification code has expired
     if (user.verifyCodeExpiry && user.verifyCodeExpiry < Date.now()) {
         throw new ApiError(400, "Verification code has expired, please Register Again, Your Record has been deleted");
     }
@@ -150,27 +154,36 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
     // 7. Mark the user as verified
     user.isVerified = true;
-    user.verifyCode = "000000"; // Clear the verification code
+    user.verifyCode = "000000";
     user.verifyCodeExpiry = Date.now();
     await user.save();
 
-    const subject = `Hey ${user.fullname}, Welcome Aboard! 🥳 Your VibeSpace Account is Ready`
-    await sendVerificationEmail(user, null, "WELCOME", subject);
+    // 8. Publish welcome email event to RabbitMQ
+    await publishEmailEvent({
+        eventId: randomUUID(),
+        email: user.email,
+        username: user.username,
+        fullname: user.fullname,
+        emailType: "WELCOME",
+        data: {},
+        retryCount: 0
+    });
 
-    // 8. Remove sensitive fields from the user object
+    // 9. Remove sensitive fields from the user object
     const verifiedUser = user.toObject();
     delete verifiedUser.password;
     delete verifiedUser.verifyCode;
     delete verifiedUser.verifyCodeExpiry;
 
-    // 9. Send response
+    // 10. Send response
     return res
         .status(200)
         .json(new ApiResponse(200, verifiedUser, "Email verified successfully"));
-});
+});;
 
 // done
 const resendVerificationCode = asyncHandler(async (req, res) => {
+
     // 1. Get the userId from the token
     const userId = req.user?._id;
     if (!userId) {
@@ -183,31 +196,35 @@ const resendVerificationCode = asyncHandler(async (req, res) => {
         throw new ApiError(404, "User not found");
     }
 
-    // 3. check if user is already verified
+    // 3. Check if user is already verified
     if (user.isVerified) {
         throw new ApiError(409, "You are already verified");
     }
 
-    // 4: Generate random 6-digit verification code
+    // 4. Generate new 6-digit verification code
     const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const verifyCodeExpiry = Date.now() + 10 * 60 * 1000; // Expires in 10 minutes
+    const verifyCodeExpiry = Date.now() + 10 * 60 * 1000;
 
-    // 5. store the new verifyCode and verifyCodeExpiry in db
+    // 5. Update verification code and expiry in database
     user.verifyCode = verifyCode;
     user.verifyCodeExpiry = verifyCodeExpiry;
+
     const updatedUser = await user.save();
 
     if (!updatedUser) {
-        throw new ApiError(500, "Internal Server Error! Try after sometime")
+        throw new ApiError(500, "Internal Server Error! Try after sometime");
     }
 
-    // 6. Send verification email
-    const subject = 'Your New OTP for Email Verification'
-    const emailSentStatus = await sendVerificationEmail(updatedUser, verifyCode, "REGISTER", subject);
-
-    if (!emailSentStatus) {
-        throw new ApiError(500, "Failed to send verification email. Please try again later.");
-    }
+    // 6. Publish verification email event to RabbitMQ
+    await publishEmailEvent({
+        eventId: randomUUID(),
+        email: updatedUser.email,
+        username: updatedUser.username,
+        fullname: updatedUser.fullname,
+        emailType: "REGISTER",
+        data: { verificationToken: verifyCode },
+        retryCount: 0
+    });
 
     // 7. Remove sensitive fields from the user object
     const unVerifiedUser = updatedUser.toObject();
@@ -215,10 +232,11 @@ const resendVerificationCode = asyncHandler(async (req, res) => {
     delete unVerifiedUser.verifyCode;
     delete unVerifiedUser.verifyCodeExpiry;
 
+    // 8. Send response
     return res
         .status(201)
-        .json(new ApiResponse(201, unVerifiedUser, ` New OTP has sent to ${updatedUser.email}. Please verify your account.`));
-})
+        .json(new ApiResponse(201, unVerifiedUser, `New OTP has sent to ${updatedUser.email}. Please verify your account.`));
+});
 
 // done
 const loginUser = asyncHandler(async (req, res) => {
@@ -254,7 +272,7 @@ const loginUser = asyncHandler(async (req, res) => {
     delete loggedInUser.verifyCode;
     delete loggedInUser.verifyCodeExpiry;
 
-    
+
 
     // Step 7: Send response with cookie
     return res
@@ -473,44 +491,51 @@ const getUserProfile = asyncHandler(async (req, res) => {
 // FORGOT PASSWORD: step 1
 const initiateForgotPasswordReset = asyncHandler(async (req, res) => {
 
-    // Step 1: Get email from the request body
+    // 1. Get email from request body
     const { email } = req.body;
 
     if (!email) {
         throw new ApiError(400, "Email is required");
     }
 
-    // Step 2: Find user by email
+    // 2. Find user by email
     const user = await User.findOne({ email });
 
     if (!user) {
-        throw new ApiError(404, "User with this email does not exist.")
+        throw new ApiError(404, "User with this email does not exist.");
     }
 
-    // Step 3: Generate verification code and expiry
-    const verifyCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    const verifyCodeExpiry = Date.now() + 20 * 60 * 1000; // Expires in 10 minutes
+    // 3. Generate verification code and expiry
+    const verifyCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verifyCodeExpiry = Date.now() + 20 * 60 * 1000;
 
     user.verifyCode = verifyCode;
     user.verifyCodeExpiry = verifyCodeExpiry;
 
-    // Step 4: Save user with verification details
+    // 4. Save verification details
     await user.save();
 
-    // Step 5: Send verification email
-    const subject = "OTP for Forget Password"
-    sendVerificationEmail(user, verifyCode, "PASSWORDRESET", subject);
-
-    // step 6. generating token
+    // 5. Generate reset token
     const resetToken = await generateResetToken(user.email);
 
-    // Step 8: Send success response
+    // 6. Publish password reset email event to RabbitMQ
+    await publishEmailEvent({
+        eventId: randomUUID(),
+        email: user.email,
+        username: user.username,
+        fullname: user.fullname,
+        emailType: "PASSWORD_RESET",
+        data: {
+            resetToken: verifyCode
+        },
+        retryCount: 0
+    });
+
+    // 7. Send success response
     return res
         .status(200)
         .cookie("resetToken", resetToken, cookieOptionsForResetPassword)
         .json(new ApiResponse(200, email, "Password reset OTP has been sent to your email."));
-
-
 });
 
 // FORGOT PASSWORD: step 2

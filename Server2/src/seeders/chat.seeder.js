@@ -1,147 +1,60 @@
-
-import { faker } from "@faker-js/faker";
 import { Chat } from "../models/chat.model.js";
-import { User } from "../models/user.model.js";
+import fs from "fs";
+import mongoose from "mongoose";
+import { faker } from "@faker-js/faker";
 
-const createFakeChatsForUser = async (targetUserId, numberOfChats = 5) => {
+// 🔥 Load users
+const users = JSON.parse(
+  fs.readFileSync("seedData/users.json", "utf-8")
+);
+
+const FIXED_USER_ID = "69ddd351ed66eb42925a3dd1";
+
+const createChats = async () => {
   try {
-    // Fetch all users except the target user
-    const otherUsers = await User.find({ _id: { $ne: targetUserId } }).select("_id");
+    const chats = [];
 
-    if (otherUsers.length === 0) {
-      console.log("No other users available to chat with.");
-      return process.exit(1);
-    }
+    const fixedUser = new mongoose.Types.ObjectId(FIXED_USER_ID);
 
-    // Shuffle and select 'numberOfChats' users
-    const selectedUsers = faker.helpers.shuffle(otherUsers).slice(0, numberOfChats);
-
-    // Create chats
-    const chatPromises = selectedUsers.map(({ _id }) =>
-      Chat.create({
-        members: [targetUserId, _id],
-        lastSeen: {
-          [targetUserId]: faker.date.recent(),
-          [_id]: faker.date.recent(),
-        }
-      })
+    // ❗ remove fixed user from list (avoid self chat)
+    const otherUsers = users.filter(
+      (u) => u._id !== FIXED_USER_ID
     );
 
-    await Promise.all(chatPromises);
+    // 🎯 pick 20 random unique users
+    const selectedUsers = faker.helpers.arrayElements(
+      otherUsers,
+      20
+    );
 
-    console.log(`✅ ${chatPromises.length} fake chats created for user ${targetUserId}`);
-    process.exit();
-  } catch (error) {
-    console.error("❌ Error creating fake chats:", error);
-    process.exit(1);
-  }
-};
+    for (const user of selectedUsers) {
+      const otherUser = new mongoose.Types.ObjectId(user._id);
 
-// Call the function with your user ID
-// createFakeChatsForUser("6829be5ac5c2792f2b40aa62", 5);
-
-
-const createGroupChats = async (numChats) => {
-  try {
-    const users = await User.find().select("_id");
-
-    const chatsPromise = [];
-
-    for (let i = 0; i < numChats; i++) {
-      const numMembers = simpleFaker.number.int({ min: 3, max: users.length });
-      const members = [];
-
-      for (let i = 0; i < numMembers; i++) {
-        const randomIndex = Math.floor(Math.random() * users.length);
-        const randomUser = users[randomIndex];
-
-        // Ensure the same user is not added twice
-        if (!members.includes(randomUser)) {
-          members.push(randomUser);
-        }
-      }
-
-      const chat = Chat.create({
-        groupChat: true,
-        name: faker.lorem.words(1),
-        members,
-        creator: members[0],
+      chats.push({
+        members: [fixedUser, otherUser],
+        lastSeen: {
+          [FIXED_USER_ID]: faker.date.recent({ days: 2 }),
+          [user._id]: faker.date.recent({ days: 2 })
+        },
+        createdAt: faker.date.past({ years: 1 }),
+        updatedAt: new Date()
       });
-
-      chatsPromise.push(chat);
     }
 
-    await Promise.all(chatsPromise);
+    // optional cleanup (recommended while testing)
+    await Chat.deleteMany({
+      members: fixedUser
+    });
 
-    console.log("Chats created successfully");
-    process.exit();
+    await Chat.insertMany(chats);
+
+    console.log(`💬 ${chats.length} chats created for fixed user`);
+    process.exit(0);
+
   } catch (error) {
     console.error(error);
     process.exit(1);
   }
 };
 
-const createMessages = async (numMessages) => {
-  try {
-    const users = await User.find().select("_id");
-    const chats = await Chat.find().select("_id");
-
-    const messagesPromise = [];
-
-    for (let i = 0; i < numMessages; i++) {
-      const randomUser = users[Math.floor(Math.random() * users.length)];
-      const randomChat = chats[Math.floor(Math.random() * chats.length)];
-
-      messagesPromise.push(
-        Message.create({
-          chat: randomChat,
-          sender: randomUser,
-          content: faker.lorem.sentence(),
-        })
-      );
-    }
-
-    await Promise.all(messagesPromise);
-
-    console.log("Messages created successfully");
-    process.exit();
-  } catch (error) {
-    console.error(error);
-    process.exit(1);
-  }
-};
-
-const createMessagesInAChat = async (chatId, numMessages) => {
-  try {
-    const users = await User.find().select("_id");
-
-    const messagesPromise = [];
-
-    for (let i = 0; i < numMessages; i++) {
-      const randomUser = users[Math.floor(Math.random() * users.length)];
-
-      messagesPromise.push(
-        Message.create({
-          chat: chatId,
-          sender: randomUser,
-          content: faker.lorem.sentence(),
-        })
-      );
-    }
-
-    await Promise.all(messagesPromise);
-
-    console.log("Messages created successfully");
-    process.exit();
-  } catch (error) {
-    console.error(error);
-    process.exit(1);
-  }
-};
-
-export {
-  createGroupChats,
-  createMessages,
-  createMessagesInAChat,
-  createFakeChatsForUser,
-};
+export { createChats };

@@ -1,14 +1,27 @@
-// index.js
 import dotenv from "dotenv";
+dotenv.config({ path: "./.env" });
+
 import connectDB from "./db/index.db.js";
+import { connectRabbitMQ } from "./config/rabbitmq.js";
 import app from "./app.js";
 
-dotenv.config({ path: './.env' }); // ✅ Load .env first!
-const PORT = process.env.PORT || 9000;
+const PORT = 5000;
 
+const startServer = async () => {
+  try {
+    await connectDB();
+    console.log("🍃 MongoDB connected");
 
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running at port ${PORT}`);
-  });
-});
+    await connectRabbitMQ();
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running at port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();

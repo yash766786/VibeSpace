@@ -4,7 +4,8 @@ import {
     uploadPost,
     updatePost,
     deletePost,
-    getPostsOfUser
+    getPostsOfUser,
+    getRecommendedFeed
 } from "../controllers/post.controller.js";
 import { verifyToken } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -28,5 +29,9 @@ router.route("/:postId")
 
 router.route("/profile/:targetUserId")
         .get(getPostsOfUser)
+
+// 🔥 Feed (NEW - recommendation system)
+router.route("/feed")
+  .get(getRecommendedFeed);
 
 export default router;

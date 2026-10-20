@@ -8,11 +8,13 @@ const commentSchema = new Schema({
     },
     post: {
         type: Schema.Types.ObjectId,
-        ref: "Post"
+        ref: "Post",
+        required: true
     },
     owner: {
         type: Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User",
+        required: true
     }
 },
     {
@@ -20,6 +22,7 @@ const commentSchema = new Schema({
     }
 )
 
+commentSchema.index({ post: 1, createdAt: -1 });
 commentSchema.plugin(mongooseAggregatePaginate)
 
 

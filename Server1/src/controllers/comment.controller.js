@@ -4,6 +4,7 @@ import { Comment } from "../models/comment.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
+import { Post } from "../models/post.model.js";
 
 
 
@@ -121,70 +122,76 @@ const getPostComments = asyncHandler(async (req, res) => {
 
 // add comment on a post
 const addComment = asyncHandler(async (req, res) => {
-    // 1. Get the postId from the request parameters
-    // 2. Get the userId from the authenticated user
-    // 3. get the content from the request body
-    const { postId } = req.params;
-    const { content } = req.body;
-    const userId = req.user._id;
+  const { postId } = req.params;
+  const { content } = req.body;
+  const userId = req.user._id;
 
-    // 4. validate the postId
-    if (!isValidObjectId(postId)) {
-        throw new ApiError(400, "Invalid post ID");
-    }
+  if (!isValidObjectId(postId)) {
+    throw new ApiError(400, "Invalid post ID");
+  }
 
-    // 5. validate the content
-    if (!content || !content.trim()) {
-        throw new ApiError(400, "Comment content is required");
-    }
+  if (!content || !content.trim()) {
+    throw new ApiError(400, "Comment content is required");
+  }
 
-    // 6. create a new comment
-    const comment = await Comment.create({
-        content: content.trim(),
-        post: postId,
-        owner: userId
-    });
+  // 🔥 ensure post exists
+  const postExists = await Post.exists({ _id: postId });
+  if (!postExists) {
+    throw new ApiError(404, "Post not found");
+  }
 
-    // 7. return the comment
-    return res
-        .status(201)
-        .json(new ApiResponse(201, comment, "Comment added successfully"));
-})
+  const comment = await Comment.create({
+    content: content.trim(),
+    post: postId,
+    owner: userId
+  });
+
+  await Post.findByIdAndUpdate(postId, {
+    $inc: { commentsCount: 1 }
+  });
+
+  return res.status(201).json(
+    new ApiResponse(201, comment, "Comment added successfully")
+  );
+});
 
 
 // delete comment from the post
 const deleteComment = asyncHandler(async (req, res) => {
-    // 1. Get the commentId from the request parameters
-    // 2. Get the userId from the authenticated user
-    const { commentId } = req.params;
-    const userId = req.user._id;
+  const { commentId } = req.params;
+  const userId = req.user._id;
 
-    // 3. validate the commentId
-    if (!isValidObjectId(commentId)) {
-        throw new ApiError(400, "Invalid comment ID");
-    }
+  if (!isValidObjectId(commentId)) {
+    throw new ApiError(400, "Invalid comment ID");
+  }
 
-    // 4. delete the comment
-    const deletedComment = await Comment.findOneAndDelete({
-        _id: commentId,
-        owner: userId, // Ensure the comment belongs to the logged-in user
-    });
+  // 🔥 find first (we need postId)
+  const comment = await Comment.findOne({
+    _id: commentId,
+    owner: userId
+  });
 
-    // 5. check if the comment was deleted
-    if (!deletedComment) {
-        throw new ApiError(404, "Comment not found");
-    }
+  if (!comment) {
+    throw new ApiError(404, "Comment not found");
+  }
 
-    // 6. delete all likes on the comment
-    await Like.deleteMany({
-        comment: commentId,
-    });
+  const postId = comment.post;
 
-    // 7. return success message
-    return res
-        .status(200)
-        .json(new ApiResponse(200, deletedComment, "Comment deleted successfully"));
-})
+  // delete comment
+  await Comment.deleteOne({ _id: commentId });
+
+  // delete likes on that comment
+  await Like.deleteMany({ comment: commentId });
+
+  // 🔥 decrement safely
+  await Post.findByIdAndUpdate(postId, {
+    $inc: { commentsCount: -1 }
+  });
+
+  return res.status(200).json(
+    new ApiResponse(200, {}, "Comment deleted successfully")
+  );
+});
 
 export {
     getPostComments,

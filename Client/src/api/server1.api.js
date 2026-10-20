@@ -7,7 +7,15 @@ export const getPostsOfUser = (targetUserId) => server1Json.get(`/posts/profile/
 export const uploadPost = (formData) => server1Form.post(`/posts/`, formData);
 export const updatePost = (postId, jsonData) => server1Form.patch(`/posts/${postId}`, jsonData);
 export const deletePost = (postId) => server1Json.delete(`/posts/${postId}`);
-
+export const getFeedPosts = ({ cursor, exclude }) => {
+  return server1Json.get("/posts/feed", {
+    params: {
+      cursor,
+      exclude,
+      limit: 10
+    }
+  });
+};
 
 // comment
 export const getPostComments = ({postId, pg}) => server1Json.get(`/comments/${postId}?page=${pg}`);

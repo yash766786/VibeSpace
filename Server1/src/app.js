@@ -23,12 +23,19 @@ import likeRouter from "./routes/like.routes.js";
 import followRouter from "./routes/follow.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
+app.get("/", (req, res) => {
+    console.log("hello")
+    return res.status(200).json({message: "working"})
+})
+
+console.log("User routes loaded");
+
 // define routes
-app.use("/api/v3/users", userRouter);
-app.use("/api/v3/posts", postRouter);
-app.use("/api/v3/comments", commentRouter);
-app.use("/api/v3/likes", likeRouter);
-app.use("/api/v3/follows", followRouter);
+app.use("/api/v4/users", userRouter);
+app.use("/api/v4/posts", postRouter);
+app.use("/api/v4/comments", commentRouter);
+app.use("/api/v4/likes", likeRouter);
+app.use("/api/v4/follows", followRouter);
 
 // define error handling middleware
 app.use(errorMiddleware);
